@@ -13,6 +13,4 @@ public static class Messages
     public static string GoRegistration => "Начните регистрацию /start:";
     public static string NewUserRegistered => "Новый пользователь зарегестрировался: ";
     public static string UserUnregrisered => "Пользователь отменил регистрацию: ";
-
-
 }

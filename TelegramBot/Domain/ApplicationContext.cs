@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Telegram.Bot.Types;
 using TelegramBot.Domain.Entities;
 
 namespace TelegramBot.Domain
@@ -8,6 +9,7 @@ namespace TelegramBot.Domain
         public DbSet<Person> Persons { get; set; }
         public DbSet<UserProfile> UserProfiles { get; set; }
         public DbSet<AdminProfile> AdminProfiles { get; set; }
+        public DbSet<Event> Events { get; set; }
 
         public ApplicationContext(DbContextOptions<ApplicationContext> options)
             : base(options)
@@ -22,6 +24,10 @@ namespace TelegramBot.Domain
             }
 
             base.OnConfiguring(optionsBuilder);
+        }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Person>().UseTpcMappingStrategy();  // Используем стратегию TPC
         }
     }
 }

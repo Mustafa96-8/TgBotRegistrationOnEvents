@@ -9,9 +9,9 @@ using TelegramBot.Domain.Enums;
 namespace TelegramBot.Domain.Entities;
 public class Person
 {
-    private Person(long id)
+    public Person(long Id)
     {
-        Id = id;
+        this.Id = Id;
     }
     public long Id { get; init; }
     public Roles role { get; protected set; } = Roles.User;

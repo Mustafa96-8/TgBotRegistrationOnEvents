@@ -78,7 +78,7 @@ public class GenericRepository<TEntity> where TEntity : class
 
     public virtual void Update(TEntity entityToUpdate)
     {
-        dbSet.Attach(entityToUpdate);
-        applicationContext.Entry(entityToUpdate).State = EntityState.Modified;
+        dbSet.Update(entityToUpdate);
+      
     }
 }

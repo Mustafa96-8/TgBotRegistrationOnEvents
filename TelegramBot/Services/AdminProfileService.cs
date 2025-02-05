@@ -30,6 +30,11 @@ public class AdminProfileService
 
     public async Task<string> Update(AdminProfile adminProfile, CancellationToken ct)
     {
+        var adminProfileFromDb = await unitOfWork.AdminProfileRepository.GetByID(adminProfile.Id, ct);
+        if (adminProfileFromDb == null)
+        {
+            return await Create(adminProfile, ct);
+        }
         unitOfWork.AdminProfileRepository.Update(adminProfile);
         int result = await unitOfWork.Save(ct);
         if (result == 0)

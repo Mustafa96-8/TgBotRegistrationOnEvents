@@ -24,7 +24,13 @@ public class PersonService
 
     public async Task<string> Update(Person person, CancellationToken ct)
     {
+        var personFromDb = await unitOfWork.PersonRepository.GetByID(person.Id, ct);
+        if (personFromDb == null)
+        {
+            return await Create(person, ct);
+        }
         unitOfWork.PersonRepository.Update(person);
+
         int result = await unitOfWork.Save(ct);
         if (result == 0)
         {
@@ -39,7 +45,7 @@ public class PersonService
         int result = await unitOfWork.Save(ct);
         if (result == 0)
         {
-            return "User not created";
+            return "Person not created";
         }
         return $"{result} changes are accepted";
     }

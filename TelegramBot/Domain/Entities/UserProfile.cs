@@ -10,9 +10,7 @@ namespace TelegramBot.Domain.Entities;
 
 public class UserProfile : Person
 {
-    public UserProfile() { }
-
-    public UserProfile(long Id)
+    public UserProfile(long Id):base(Id)
     {
         this.Id = Id;
         this.role=Roles.User;
@@ -23,7 +21,7 @@ public class UserProfile : Person
     public UserStates UserState { get; private set; } = UserStates.awaiting_registration;
     public bool HeIsEighteen {  get; private set; } = false;
     public bool IsRegistered { get; private set; } = false;
-    public IEnumerable<Event> Events { get; set; }
+    public IEnumerable<Event> Events { get; set; }= new List<Event>();
 
     public bool ChekUserIsEighteen(string answer,UserStates userState = UserStates.awaiting_name)
     {

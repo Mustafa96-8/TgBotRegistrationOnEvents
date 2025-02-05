@@ -32,6 +32,12 @@ namespace TelegramBot.Services
 
         public async Task<string> Update(UserProfile userProfile,CancellationToken ct)
         {
+            var userProfileFromDb = await unitOfWork.UserProfileRepository.GetByID(userProfile.Id, ct);
+            if (userProfileFromDb == null)
+            {
+                return await Create(userProfile, ct);
+            }
+            
             unitOfWork.UserProfileRepository.Update(userProfile);
             int result = await unitOfWork.Save(ct);
             if (result == 0)

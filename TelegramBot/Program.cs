@@ -15,11 +15,11 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.Configure<BotConfiguration>(context.Configuration.GetSection("BotConfiguration"));
         services.AddDbContext<ApplicationContext>(options =>
             options.UseSqlite(context.Configuration.GetConnectionString("DefaultConnection")));
-        services.AddScoped<UnitOfWork>();
-/*        services.AddScoped<IGenericRepository<Person>, PersonRepository>();
-        services.AddScoped<IGenericRepository<UserProfile>, UserProfileRepository>();
-        services.AddScoped<IGenericRepository<AdminProfile>, AdminProfileRepository>();*/
+        services.AddScoped<IUnitOfWork,UnitOfWork>();
         services.AddScoped<UserProfileService>();
+        services.AddScoped<AdminProfileService>();
+        services.AddScoped<PersonService>();
+        services.AddScoped<EventService>();
         services.AddHttpClient("telegram_bot_client")
                 .AddTypedClient<ITelegramBotClient>((httpClient, sp) =>
                 {
