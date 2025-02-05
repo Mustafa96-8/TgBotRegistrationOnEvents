@@ -7,6 +7,7 @@ public class UnitOfWork(ApplicationContext applicationContext) : IUnitOfWork
     private GenericRepository<Person> personRepository;
     private GenericRepository<UserProfile> userProfileRepository;
     private GenericRepository<AdminProfile> adminProfileRepository;
+    private GenericRepository<Event> eventRepository;
 
     public GenericRepository<Person> PersonRepository
     {
@@ -43,13 +44,25 @@ public class UnitOfWork(ApplicationContext applicationContext) : IUnitOfWork
             }
             return adminProfileRepository;
         }
+    }                          
+    public GenericRepository<Event> EventRepository
+    {
+        get
+        {
+
+            if (this.eventRepository == null)
+            {
+                this.eventRepository = new GenericRepository<Event>(context);
+            }
+            return eventRepository;
+        }
     }
 
 
 
-    public void Save()
+    public async Task<int> Save(CancellationToken cancellationToken)
     {
-        context.SaveChanges();
+        return await context.SaveChangesAsync(cancellationToken);
     }
 
     private bool disposed = false;

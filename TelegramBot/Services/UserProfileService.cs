@@ -25,22 +25,22 @@ namespace TelegramBot.Services
         /// <param name="id"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<UserProfile> Get(long id,CancellationToken ct) 
+        public async Task<UserProfile?> Get(long id,CancellationToken ct) 
         {
-            var userProfile = await unitOfWork.UserProfileRepository.Get(u=>u.Id==id);
-
+            var userProfile = await unitOfWork.UserProfileRepository.GetByID(id,ct);
             return userProfile;
         }
 
         public async Task<IEnumerable<UserProfile>> GetAll(CancellationToken ct)
         {
-            IEnumerable<UserProfile> users = await repository.GetAll(u => u.role == Roles.User && u.IsRegistered == true,ct);
+            IEnumerable<UserProfile> users = await unitOfWork.UserProfileRepository.Get(ct,u=>u.IsRegistered == true);
             return users;
         }
 
         public async Task<string> Update(UserProfile userProfile,CancellationToken ct)
         {
-            var result = await repository.UpSert(userProfile, ct);
+            unitOfWork.UserProfileRepository.Update(userProfile);
+            int result = await unitOfWork.Save(ct);
             if (result == 0)
             {
                 return "Changes not saved";
@@ -48,9 +48,21 @@ namespace TelegramBot.Services
             return $"{result} changes are accepted";
         }
 
+        public async Task<string> Create(UserProfile userProfile,CancellationToken ct)
+        {
+            await unitOfWork.UserProfileRepository.Insert(userProfile,ct);
+            int result = await unitOfWork.Save(ct);
+            if (result == 0)
+            {
+                return "User not created";
+            }
+            return $"{result} changes are accepted";
+        }
+
         public async Task<string> Delete(UserProfile userProfile, CancellationToken ct)
         {
-            var result = await repository.Delete(userProfile, ct);
+            unitOfWork.UserProfileRepository.Delete(userProfile);
+            var result = await unitOfWork.Save(ct);
             if (result == 0)
             {
                 return "User is not remove";

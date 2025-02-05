@@ -20,7 +20,7 @@ public class GenericRepository<TEntity> where TEntity : class
         this.dbSet = applicationContext.Set<TEntity>();
     }
 
-    public virtual IEnumerable<TEntity> Get(
+    public virtual async Task<IEnumerable<TEntity>> Get(CancellationToken cancellationToken,
         Expression<Func<TEntity, bool>> filter = null,
         Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
         string includeProperties = "")
@@ -40,28 +40,31 @@ public class GenericRepository<TEntity> where TEntity : class
 
         if (orderBy != null)
         {
-            return orderBy(query).ToList();
+            return await orderBy(query).ToListAsync(cancellationToken);
         }
         else
         {
-            return query.ToList();
+            return await query.ToListAsync(cancellationToken);
         }
     }
 
-    public virtual TEntity GetByID(object id)
+    public virtual async Task<TEntity?> GetByID(object id,CancellationToken cancellationToken)
     {
-        return dbSet.Find(id);
+        return await dbSet.FindAsync(id,cancellationToken);
     }
 
-    public virtual void Insert(TEntity entity)
+    public virtual async Task Insert(TEntity entity,CancellationToken cancellationToken)
     {
-        dbSet.Add(entity);
+        await dbSet.AddAsync(entity,cancellationToken:cancellationToken);
     }
 
-    public virtual void Delete(object id)
+    public virtual async Task<bool> DeleteById(object id,CancellationToken cancellationToken)
     {
-        TEntity entityToDelete = dbSet.Find(id);
+        TEntity? entityToDelete = await dbSet.FindAsync(id,cancellationToken);
+        if (entityToDelete == null)
+            return false;
         Delete(entityToDelete);
+        return true;
     }
 
     public virtual void Delete(TEntity entityToDelete)

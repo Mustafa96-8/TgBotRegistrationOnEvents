@@ -6,5 +6,5 @@ public interface IUnitOfWork : IDisposable
     GenericRepository<AdminProfile> AdminProfileRepository { get; }
     GenericRepository<Person> PersonRepository { get; }
     GenericRepository<UserProfile> UserProfileRepository { get; }
-    void Save();
+    Task<int> Save(CancellationToken cancellationToken);
 }
