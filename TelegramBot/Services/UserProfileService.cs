@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using TelegramBot.Domain.Entities;
 using TelegramBot.Domain.Collections;
 using TelegramBot.Domain.Repositories.IRepositories;
-using TelegramBot.Domain.Repositories;
 
 namespace TelegramBot.Services
 {
@@ -19,12 +18,6 @@ namespace TelegramBot.Services
             this.unitOfWork = unitOfWork;   
         }
 
-        /// <summary>
-        /// Позволяет получить пользователя по его Идентификатору пользователя в Телеграмм, возвращает <see langword="null"/>.
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
         public async Task<UserProfile?> Get(long id,CancellationToken ct) 
         {
             var userProfile = await unitOfWork.UserProfileRepository.GetByID(id,ct);

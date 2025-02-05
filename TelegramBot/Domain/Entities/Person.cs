@@ -9,17 +9,22 @@ using TelegramBot.Domain.Enums;
 namespace TelegramBot.Domain.Entities;
 public class Person
 {
+    private Person(long id)
+    {
+        Id = id;
+    }
     public long Id { get; init; }
     public Roles role { get; protected set; } = Roles.User;
-    public int? LastProfileMessageId { get; protected set; }
+    public int? LastProfileMessageId { get;set; }
 
-    public Person Create(long id)
+    public static Person Create(long id)
     {
-        if (SetAdmin())
+        var personTemp = new Person(id);
+        if (personTemp.SetAdmin())
         {
             return new AdminProfile(id);
         }
-        return new UserProfile(Id);
+        return new UserProfile(id);
     }
 
     public bool SetAdmin()

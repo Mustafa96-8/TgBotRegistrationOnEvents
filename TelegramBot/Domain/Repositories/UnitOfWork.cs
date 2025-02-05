@@ -1,4 +1,5 @@
 ﻿using TelegramBot.Domain.Entities;
+using TelegramBot.Domain.Repositories.IRepositories;
 
 namespace TelegramBot.Domain.Repositories;
 public class UnitOfWork(ApplicationContext applicationContext) : IUnitOfWork
@@ -13,7 +14,6 @@ public class UnitOfWork(ApplicationContext applicationContext) : IUnitOfWork
     {
         get
         {
-
             if (this.personRepository == null)
             {
                 this.personRepository = new GenericRepository<Person>(context);

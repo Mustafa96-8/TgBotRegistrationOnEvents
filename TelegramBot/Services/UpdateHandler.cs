@@ -28,16 +28,20 @@ public class UpdateHandler : IUpdateHandler
     private readonly HttpClient httpClient;
 
     private readonly UserProfileService userProfileService;
+    private readonly AdminProfileService adminProfileService;
+    private readonly PersonService personService;
 
     
 
 
-    public UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger, HttpClient httpClient, UserProfileService userProfileService)
+    public UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger, HttpClient httpClient, UserProfileService userProfileService,AdminProfileService adminProfileService,PersonService personService)
     {
         this.bot = bot;
         this.logger = logger;
         this.httpClient = httpClient;
         this.userProfileService = userProfileService;
+        this.adminProfileService = adminProfileService;
+        this.personService = personService;
     }
 
     public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken)
@@ -82,28 +86,40 @@ public class UpdateHandler : IUpdateHandler
         if (msg.Text is not { } messageText)
             return;
 
-        UserProfile? userProfile = await userProfileService.Get(msg.Chat.Id, cancellationToken);
+        Person? person = await personService.Get(msg.Chat.Id, cancellationToken);
 
         // Инициализация профиля пользователя при первом обращении
-        if (userProfile == null)
+        if (person == null)
         {
-            userProfile = new UserProfile { Id = msg.Chat.Id };
+            person = Person.Create(msg.Chat.Id);    
         }
 
-        
-
-        if (userProfile.IsRegistered)
+        if (person.role == Roles.Admin)
         {
-            if (userProfile.role == Roles.Admin)
+            AdminProfile Admin = (AdminProfile)person;
+            Message sentMessage = await (messageText.Split(' ')[0] switch
+            {
+                "/start" => GetAdminPanel(msg, Admin, cancellationToken),
+                "/admin" => GetAdminPanel(msg, Admin, cancellationToken),
+                "/getall" => AdminGetAllRegistratedUsers(msg, Admin, cancellationToken),
+                "/debug" => GetDebugInfo(msg, Admin, cancellationToken),
+                "/deleteDebug" => DeleteProfileDebug(msg, Admin, cancellationToken),
+                _ => HandleAdminInput(msg, Admin, cancellationToken)
+            });
+            logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage?.MessageId);
+        }
+        else
+        {
+            UserProfile User = (UserProfile)person;
+            if (User.IsRegistered)
             {
                 Message sentMessage = await (messageText.Split(' ')[0] switch
                 {
-                    "/start" => GetAdminPanel(msg, userProfile, cancellationToken),
-                    "/admin" => GetAdminPanel(msg, userProfile, cancellationToken),
-                    "/getall" => AdminGetAllRegistratedUsers(msg, userProfile, cancellationToken),
-                    "/debug" => GetDebugInfo(msg, userProfile, cancellationToken),                                                                     
-                    "/deleteDebug" => DeleteProfileDebug(msg, userProfile, cancellationToken),
-                    _ => HandleAdminInput(msg, userProfile, cancellationToken)
+                    "/getadmin" => GetAdminRole(msg, User, cancellationToken),
+                    "/debug" => GetDebugInfo(msg, User, cancellationToken),
+                    "/deleteDebug" => DeleteProfileDebug(msg, User, cancellationToken),
+                    "/unregister" => UnregisterUser(msg, User, cancellationToken),
+                    _ => HandleUserInput(msg, User, cancellationToken)
                 });
                 logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage?.MessageId);
             }
@@ -111,28 +127,15 @@ public class UpdateHandler : IUpdateHandler
             {
                 Message sentMessage = await (messageText.Split(' ')[0] switch
                 {
-                    "/getadmin" => GetAdminRole(msg, userProfile, cancellationToken),
-                    "/debug" => GetDebugInfo(msg, userProfile, cancellationToken),
-                    "/deleteDebug" => DeleteProfileDebug(msg, userProfile, cancellationToken),
-                    "/unregister" => UnregisterUser(msg, userProfile, cancellationToken),
-                    _ => HandleUserInput(msg, userProfile, cancellationToken)
+                    "/debug" => GetDebugInfo(msg, User, cancellationToken),
+                    "/deleteDebug" => DeleteProfileDebug(msg, User, cancellationToken),
+                    "/unregister" => UnregisterUser(msg, User, cancellationToken),
+                    _ => HandleUserInput(msg, User, cancellationToken)
                 });
+
                 logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage?.MessageId);
             }
         }
-        else
-        {
-            Message sentMessage = await (messageText.Split(' ')[0] switch
-            {
-                "/debug" => GetDebugInfo(msg, userProfile, cancellationToken),
-                "/deleteDebug" => DeleteProfileDebug(msg, userProfile, cancellationToken),
-                "/unregister" => UnregisterUser(msg, userProfile, cancellationToken),
-                _ => HandleUserInput(msg, userProfile, cancellationToken)
-            });
-
-            logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage?.MessageId);
-        }
-
     }
     private async Task<Message> HandleUserInput(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
     {
@@ -239,18 +242,18 @@ public class UpdateHandler : IUpdateHandler
                $"Телефон: {profile.PhoneNumber}\n";
     }
 
-    private async Task<Message> EditOrSendMessage(Message msg, UserProfile userProfile,string _text, InlineKeyboardMarkup _replyMarkup, CancellationToken cancellationToken)
+    private async Task<Message> EditOrSendMessage(Message msg, Person person,string _text, InlineKeyboardMarkup _replyMarkup, CancellationToken cancellationToken)
     {
 
         // Проверка, является ли сообщение с профилем последним в переписке
-        if (userProfile.LastProfileMessageId.HasValue)
+        if (person.LastProfileMessageId.HasValue)
         {
             try
             {
                 // Пытаемся обновить ранее отправленное сообщение
                 await bot.EditMessageText(
                     chatId: msg.Chat.Id,
-                    messageId: userProfile.LastProfileMessageId.Value,
+                    messageId: person.LastProfileMessageId.Value,
                     text: _text,
                     replyMarkup: _replyMarkup  ,
                     cancellationToken: cancellationToken
@@ -263,7 +266,7 @@ public class UpdateHandler : IUpdateHandler
                 // Если сообщение не удалось обновить (например, оно было удалено), отправляем новое
                 if (ex.ErrorCode == 400)
                 {
-                    userProfile.LastProfileMessageId = null;
+                    person.LastProfileMessageId = null;
                 }
                 else
                 {
@@ -281,8 +284,8 @@ public class UpdateHandler : IUpdateHandler
         );
 
         // Сохраняем ID последнего сообщения с профилем
-        userProfile.LastProfileMessageId = sentMessage.MessageId;
-        await userProfileService.Update(userProfile, cancellationToken);
+        person.LastProfileMessageId = sentMessage.MessageId;
+        await personService.Update(person, cancellationToken);
 
         return sentMessage;
     }
@@ -409,23 +412,23 @@ public class UpdateHandler : IUpdateHandler
         return await bot.SendMessage(msg.Chat.Id, "Вы не внесены в список администраторов, обратитесь к разработчику", parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
     }
 
-    private async Task<Message> SwitchNotificationNewUsers(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
+    private async Task<Message> SwitchNotificationNewUsers(Message msg, AdminProfile adminProfile, CancellationToken cancellationToken)
     {
-        userProfile.SetNotification(!userProfile.IsNotificationNewUser);
+        adminProfile.ChangeNotification();
         await userProfileService.Update(userProfile, cancellationToken);
         if(userProfile.IsNotificationNewUser)
         {
-            return await EditOrSendMessage(msg, userProfile, "Вы будете получать оповещения о новых пользователях", GetAdminKeyboard(), cancellationToken);
+            return await EditOrSendMessage(msg, adminProfile, "Вы будете получать оповещения о новых пользователях", GetAdminKeyboard(), cancellationToken);
         }
-        return await EditOrSendMessage(msg, userProfile, "Вы больше не будете получать оповещения о новых пользователях", GetAdminKeyboard(), cancellationToken);
+        return await EditOrSendMessage(msg, adminProfile, "Вы больше не будете получать оповещения о новых пользователях", GetAdminKeyboard(), cancellationToken);
 
     }
 
-    private async Task<Message> GetAdminPanel(Message msg,UserProfile userProfile,CancellationToken cancellationToken)
+    private async Task<Message> GetAdminPanel(Message msg,AdminProfile adminProfile,CancellationToken cancellationToken)
     {
         return await bot.SendMessage(msg.Chat.Id, "Menu", replyMarkup: GetAdminKeyboard(), cancellationToken: cancellationToken);
     }
-    private async Task<Message> AdminGetAllRegistratedUsers(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
+    private async Task<Message> AdminGetAllRegistratedUsers(Message msg, AdminProfile adminProfile, CancellationToken cancellationToken)
     {
         var result = await userProfileService.GetAll(cancellationToken);
         string? listAllUsers = null;
@@ -439,13 +442,13 @@ public class UpdateHandler : IUpdateHandler
         Message csvFileMessage = await CsvFileHelper<UserProfileResponse>.WriteFileToCsv(bot, msg.Chat.Id, users);
         logger.LogInformation("The message with CSV file send with Id: {SentMessageId}", csvFileMessage?.Id);
 
-        return await EditOrSendMessage(msg,userProfile, listAllUsers??="Пользователей не найдено", GetAdminKeyboard(), cancellationToken: cancellationToken);
+        return await EditOrSendMessage(msg,adminProfile, listAllUsers??="Пользователей не найдено", GetAdminKeyboard(), cancellationToken: cancellationToken);
     }               
 
 
     private async Task AdminGetUsersNotification(UserProfile userProfile,string messageText,CancellationToken cancellationToken)
     {
-        var admins = await userProfileService.GetAdminList(cancellationToken);
+        var admins = await adminProfileService.GetAll(cancellationToken);
         Message message = new Message();
         foreach (var admin in admins)
         {
@@ -455,11 +458,11 @@ public class UpdateHandler : IUpdateHandler
         return;
     }
 
-    private async Task<Message> HandleAdminInput(Message msg,UserProfile userProfile,CancellationToken cancellationToken)
+    private async Task<Message> HandleAdminInput(Message msg,AdminProfile adminProfile,CancellationToken cancellationToken)
     {
-        return await (userProfile.UserState switch
+        return await (adminProfile.AdminState switch
         {
-            _ => GetAdminPanel(msg, userProfile, cancellationToken),
+            _ => GetAdminPanel(msg, adminProfile, cancellationToken),
         });
     }
 
