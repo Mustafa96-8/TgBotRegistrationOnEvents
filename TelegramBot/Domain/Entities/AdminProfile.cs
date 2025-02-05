@@ -16,16 +16,16 @@ public class AdminProfile : Person
         this.Id = Id;
     }
     public AdminStates AdminState { get; private set; } = AdminStates.completed;
-    public bool IsNotificationNewUser { get; private set; } = false;
+    public ICollection<Event> NotificationList { get; private set; } = new List<Event>();
 
-    public void SetNotification(bool notify)
+
+    public void ChangeNotification(Event _event)
     {
-        if (this.role == Roles.Admin)
+        if (NotificationList.Contains(_event))
         {
-            IsNotificationNewUser = notify;
+            NotificationList.Remove(_event);
             return;
         }
-        IsNotificationNewUser = false;
+        NotificationList.Add(_event);
     }
-
 }

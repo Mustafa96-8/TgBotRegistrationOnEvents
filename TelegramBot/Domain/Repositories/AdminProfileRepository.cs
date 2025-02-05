@@ -3,8 +3,9 @@ using System.Linq.Expressions;
 using TelegramBot.Domain.Entities;
 using TelegramBot.Domain.Repositories.IRepositories;
 
+
 namespace TelegramBot.Domain.Repositories;
-internal class AdminProfileRepository : IGenericRepository<AdminProfile>
+public class AdminProfileRepository : IGenericRepository<AdminProfile>
 {
     private readonly ApplicationContext applicationContext;
 

@@ -2,7 +2,7 @@
 using Telegram.Bot;
 using TelegramBot.Services;
 
-namespace Console.Advanced.Services;
+namespace TelegramBot.Services.TelegramServices;
 
 // Compose Receiver and UpdateHandler implementation
 public class ReceiverService(ITelegramBotClient botClient, UpdateHandler updateHandler, ILogger<ReceiverServiceBase<UpdateHandler>> logger)

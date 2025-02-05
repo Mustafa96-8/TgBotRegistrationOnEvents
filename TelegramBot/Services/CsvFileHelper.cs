@@ -6,7 +6,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 
 namespace TelegramBot.Services;
-public static class CsvFileService<T> where T:class
+public static class CsvFileHelper<T> where T:class
 {
     public static async Task<Message> WriteFileToCsv(ITelegramBotClient bot,long chatId,IEnumerable<T> listOfObjects)
     {

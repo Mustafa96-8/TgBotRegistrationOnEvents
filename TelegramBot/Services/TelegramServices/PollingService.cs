@@ -1,6 +1,6 @@
 ﻿using Console.Advanced.Abstract;
 
-namespace Console.Advanced.Services;
+namespace TelegramBot.Services.TelegramServices;
 
 // Compose Polling and ReceiverService implementations
 public class PollingService(IServiceProvider serviceProvider, ILogger<PollingService> logger)

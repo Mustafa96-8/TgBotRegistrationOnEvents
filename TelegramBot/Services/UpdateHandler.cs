@@ -436,7 +436,7 @@ public class UpdateHandler : IUpdateHandler
             i++;
             listAllUsers += $" №{i} Имя: {user.Name} Номер телефона: {user.PhoneNumber} ";
         }
-        Message csvFileMessage = await CsvFileService<UserProfileResponse>.WriteFileToCsv(bot, msg.Chat.Id, users);
+        Message csvFileMessage = await CsvFileHelper<UserProfileResponse>.WriteFileToCsv(bot, msg.Chat.Id, users);
         logger.LogInformation("The message with CSV file send with Id: {SentMessageId}", csvFileMessage?.Id);
 
         return await EditOrSendMessage(msg,userProfile, listAllUsers??="Пользователей не найдено", GetAdminKeyboard(), cancellationToken: cancellationToken);

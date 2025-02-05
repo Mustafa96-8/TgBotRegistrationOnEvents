@@ -6,16 +6,17 @@ using System.Threading.Tasks;
 using TelegramBot.Domain.Entities;
 using TelegramBot.Domain.Collections;
 using TelegramBot.Domain.Repositories.IRepositories;
+using TelegramBot.Domain.Repositories;
 
 namespace TelegramBot.Services
 {
     public class UserProfileService
     {
-        private readonly IUserProfileRepository repository;
+        private readonly IUnitOfWork unitOfWork;
 
-        public UserProfileService(IUserProfileRepository userProfileRepository)
+        public UserProfileService(IUnitOfWork unitOfWork)
         {
-            this.repository = userProfileRepository;   
+            this.unitOfWork = unitOfWork;   
         }
 
         /// <summary>
@@ -26,7 +27,7 @@ namespace TelegramBot.Services
         /// <returns></returns>
         public async Task<UserProfile> Get(long id,CancellationToken ct) 
         {
-            var userProfile = await repository.Get(id,ct);
+            var userProfile = await unitOfWork.UserProfileRepository.Get(u=>u.Id==id);
 
             return userProfile;
         }
@@ -36,13 +37,6 @@ namespace TelegramBot.Services
             IEnumerable<UserProfile> users = await repository.GetAll(u => u.role == Roles.User && u.IsRegistered == true,ct);
             return users;
         }
-
-        public async Task<IEnumerable<UserProfile>> GetAdminList(CancellationToken ct)
-        {
-            IEnumerable<UserProfile> admins = await repository.GetAll(u => u.role == Roles.Admin &&u.IsNotificationNewUser==true, ct);
-            return admins;
-        }
-
 
         public async Task<string> Update(UserProfile userProfile,CancellationToken ct)
         {

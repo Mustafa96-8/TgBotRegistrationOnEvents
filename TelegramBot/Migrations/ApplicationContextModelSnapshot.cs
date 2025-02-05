@@ -25,7 +25,7 @@ namespace TelegramBot.Migrations
                     b.Property<bool>("HeIsEighteen")
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool>("IsNotificationNewUser")
+                    b.Property<bool>("NotificationList")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsRegistered")

@@ -1,4 +1,4 @@
-﻿using Console.Advanced.Services;
+﻿using TelegramBot.Services.TelegramServices;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
