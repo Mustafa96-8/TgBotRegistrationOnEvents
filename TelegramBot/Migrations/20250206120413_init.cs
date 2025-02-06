@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TelegramBot.Migrations
 {
     /// <inheritdoc />
-    public partial class initial : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -18,7 +18,8 @@ namespace TelegramBot.Migrations
                     Id = table.Column<long>(type: "INTEGER", nullable: false),
                     role = table.Column<int>(type: "INTEGER", nullable: false),
                     LastProfileMessageId = table.Column<int>(type: "INTEGER", nullable: true),
-                    AdminState = table.Column<int>(type: "INTEGER", nullable: false)
+                    AdminState = table.Column<int>(type: "INTEGER", nullable: false),
+                    CurrentEvent = table.Column<Guid>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {

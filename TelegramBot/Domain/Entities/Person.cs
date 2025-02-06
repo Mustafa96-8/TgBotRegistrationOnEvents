@@ -13,6 +13,7 @@ public class Person
     {
         this.Id = Id;
     }
+
     public long Id { get; init; }
     public Roles role { get; protected set; } = Roles.User;
     public int? LastProfileMessageId { get;set; }

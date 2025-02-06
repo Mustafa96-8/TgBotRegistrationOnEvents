@@ -28,6 +28,15 @@ namespace TelegramBot.Domain
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Person>().UseTpcMappingStrategy();  // Используем стратегию TPC
+            modelBuilder.Entity<UserProfile>()
+                        .HasMany(u => u.Events)
+                        .WithMany(e => e.UserProfiles)
+                        .UsingEntity<Dictionary<string, object>>(
+                            "UserProfileEvent",
+                            j => j.HasOne<Event>().WithMany().HasForeignKey("EventId").OnDelete(DeleteBehavior.Cascade),
+                            j => j.HasOne<UserProfile>().WithMany().HasForeignKey("UserProfileId").OnDelete(DeleteBehavior.Cascade)
+                        );
+
         }
     }
 }

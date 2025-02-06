@@ -21,7 +21,7 @@ public class UserProfile : Person
     public UserStates UserState { get; private set; } = UserStates.awaiting_registration;
     public bool HeIsEighteen {  get; private set; } = false;
     public bool IsRegistered { get; private set; } = false;
-    public IEnumerable<Event> Events { get; set; }= new List<Event>();
+    public ICollection<Event> Events { get; set; }= new List<Event>();
 
     public bool ChekUserIsEighteen(string answer,UserStates userState = UserStates.awaiting_name)
     {
@@ -76,6 +76,12 @@ public class UserProfile : Person
             return true;
         }
         return false;
+    }
+
+    public void RegisterOnEvent(Event myEvent)
+    {
+        this.Events.Append(myEvent);
+        this.UserState = UserStates.completed;
     }
 
     public bool ValidatePhoneNumber(string phoneNumber)

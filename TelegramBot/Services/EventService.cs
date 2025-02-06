@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using TelegramBot.Domain.Entities;
@@ -16,15 +17,21 @@ public class EventService
         this.unitOfWork = unitOfWork;
     }
 
-    public async Task<Event?> Get(long id, CancellationToken ct)
+    public async Task<Event?> Get(Guid? id, CancellationToken ct)
     {
+        if (id == null) return null; 
         var myEvent = await unitOfWork.EventRepository.GetByID(id,ct);
         return myEvent;
     }
 
-    public async Task<IEnumerable<Event>> GetAll(CancellationToken ct)
+    public async Task<IEnumerable<Event>> GetAll(CancellationToken ct, Expression<Func<Event, bool>> filter = null)
     {
-        IEnumerable<Event> events= await unitOfWork.EventRepository.Get(ct);
+        IEnumerable<Event> events= await unitOfWork.EventRepository.Get(ct,filter);
+        return events;
+    }
+    public async Task<IEnumerable<Event>> GetAllByUser(UserProfile userProfile,CancellationToken ct)
+    {
+        IEnumerable<Event> events = await unitOfWork.EventRepository.Get(ct, u => u.UserProfiles.Contains(userProfile));
         return events;
     }
 
@@ -49,7 +56,6 @@ public class EventService
         }
         return $"{result} changes are accepted";
     }
-
     public async Task<string> Delete(Event myEvent, CancellationToken ct)
     {
         unitOfWork.EventRepository.Delete(myEvent);

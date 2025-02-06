@@ -29,6 +29,11 @@ namespace TelegramBot.Services
             IEnumerable<UserProfile> users = await unitOfWork.UserProfileRepository.Get(ct,u=>u.IsRegistered == true);
             return users;
         }
+        public async Task<IEnumerable<UserProfile>> GetAllByEvent(Event myEvent,CancellationToken ct)
+        {
+            IEnumerable<UserProfile> users = await unitOfWork.UserProfileRepository.Get(ct, u => u.IsRegistered == true&&u.Events.Contains(myEvent));
+            return users;
+        }
 
         public async Task<string> Update(UserProfile userProfile,CancellationToken ct)
         {
@@ -57,7 +62,23 @@ namespace TelegramBot.Services
             }
             return $"{result} changes are accepted";
         }
+        public async Task<bool> Register(UserProfile userProfile, Event myEvent, CancellationToken ct)
+        {
+            userProfile.Events.Add(myEvent);
+            unitOfWork.UserProfileRepository.Update(userProfile);
+            int result = await unitOfWork.Save(ct);
+            return result != 0;
+        }
 
+        public async Task<bool> Unregister(UserProfile userProfile,Event myEvent, CancellationToken ct)
+        {
+            userProfile.Events.Remove(myEvent);
+            myEvent.UserProfiles.Remove(userProfile);
+            unitOfWork.EventRepository.Update(myEvent);
+            unitOfWork.UserProfileRepository.Update(userProfile);
+            int result = await unitOfWork.Save(ct);
+            return result != 0;
+        }
         public async Task<string> Delete(UserProfile userProfile, CancellationToken ct)
         {
             unitOfWork.UserProfileRepository.Delete(userProfile);

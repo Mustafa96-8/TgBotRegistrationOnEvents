@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TelegramBot.Domain;
 
@@ -10,12 +11,29 @@ using TelegramBot.Domain;
 namespace TelegramBot.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20250206174914_ChangeToCollections")]
+    partial class ChangeToCollections
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.1");
+
+            modelBuilder.Entity("EventUserProfile", b =>
+                {
+                    b.Property<Guid>("EventsId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UserProfilesId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("EventsId", "UserProfilesId");
+
+                    b.HasIndex("UserProfilesId");
+
+                    b.ToTable("EventUserProfile");
+                });
 
             modelBuilder.Entity("TelegramBot.Domain.Entities.Event", b =>
                 {
@@ -62,21 +80,6 @@ namespace TelegramBot.Migrations
                     b.UseTpcMappingStrategy();
                 });
 
-            modelBuilder.Entity("UserProfileEvent", b =>
-                {
-                    b.Property<Guid>("EventId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<long>("UserProfileId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("EventId", "UserProfileId");
-
-                    b.HasIndex("UserProfileId");
-
-                    b.ToTable("UserProfileEvent");
-                });
-
             modelBuilder.Entity("TelegramBot.Domain.Entities.AdminProfile", b =>
                 {
                     b.HasBaseType("TelegramBot.Domain.Entities.Person");
@@ -112,26 +115,26 @@ namespace TelegramBot.Migrations
                     b.ToTable("UserProfiles");
                 });
 
-            modelBuilder.Entity("TelegramBot.Domain.Entities.Event", b =>
-                {
-                    b.HasOne("TelegramBot.Domain.Entities.AdminProfile", null)
-                        .WithMany("NotificationList")
-                        .HasForeignKey("AdminProfileId");
-                });
-
-            modelBuilder.Entity("UserProfileEvent", b =>
+            modelBuilder.Entity("EventUserProfile", b =>
                 {
                     b.HasOne("TelegramBot.Domain.Entities.Event", null)
                         .WithMany()
-                        .HasForeignKey("EventId")
+                        .HasForeignKey("EventsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("TelegramBot.Domain.Entities.UserProfile", null)
                         .WithMany()
-                        .HasForeignKey("UserProfileId")
+                        .HasForeignKey("UserProfilesId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("TelegramBot.Domain.Entities.Event", b =>
+                {
+                    b.HasOne("TelegramBot.Domain.Entities.AdminProfile", null)
+                        .WithMany("NotificationList")
+                        .HasForeignKey("AdminProfileId");
                 });
 
             modelBuilder.Entity("TelegramBot.Domain.Entities.AdminProfile", b =>

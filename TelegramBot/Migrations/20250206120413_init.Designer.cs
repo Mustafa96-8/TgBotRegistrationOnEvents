@@ -11,8 +11,8 @@ using TelegramBot.Domain;
 namespace TelegramBot.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    [Migration("20250205222448_initial")]
-    partial class initial
+    [Migration("20250206120413_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -86,6 +86,9 @@ namespace TelegramBot.Migrations
 
                     b.Property<int>("AdminState")
                         .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("CurrentEvent")
+                        .HasColumnType("TEXT");
 
                     b.ToTable("AdminProfiles");
                 });

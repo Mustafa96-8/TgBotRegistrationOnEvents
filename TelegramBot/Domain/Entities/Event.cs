@@ -13,13 +13,19 @@ public class Event
     public string Description { get; set; } = "";
     public DateTime Date { get; private set;}
 
-    public IEnumerable<UserProfile> UserProfiles { get; set; }
+    public ICollection<UserProfile> UserProfiles { get; set; } = new List<UserProfile>();
 
-    public bool SetDate(DateTime date)
+    public override string ToString()
     {
-        if (date >= DateTime.Now)
+        return Name+" Дата:"+Date.ToString();
+    }
+
+    public bool SetDate(string text)
+    {
+        DateTime date;
+        if (DateTime.TryParse(text, out date) && date >= DateTime.Now)
         {
-            this.Date = date;
+            Date = date;
             return true; 
         }
         return false;

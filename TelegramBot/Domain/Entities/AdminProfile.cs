@@ -11,6 +11,38 @@ public class AdminProfile : Person
     public AdminStates AdminState { get; private set; } = AdminStates.completed;
     public ICollection<Event> NotificationList { get; private set; } = new List<Event>();
 
+    public Guid? CurrentEvent { get; private set; } = null;
+
+    public void StartCreatingEvent()
+    {
+        AdminState = AdminStates.create_event;
+    }
+
+    public bool SetCurrentEvent(Guid id)
+    {
+        if (CurrentEvent == null)
+        {
+            AdminState = AdminStates.awaiting_eventName;
+            CurrentEvent = id;
+            return true;
+        }
+        return false;
+    }
+
+    public void SetAdminState(AdminStates state)
+    {
+        if (AdminState != AdminStates.completed)
+        {
+            AdminState = state;
+        }
+    }
+
+
+    public void ResetCurrentEvent()
+    {
+        AdminState = AdminStates.completed;
+        CurrentEvent = null;
+    }
 
     public void ChangeNotification(Event _event)
     {

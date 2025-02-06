@@ -1,7 +1,4 @@
-﻿using System.Globalization;
-using System.Text.RegularExpressions;
-using System.Threading;
-using Telegram.Bot;
+﻿using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -10,10 +7,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBot.Domain.Entities;
 using TelegramBot.Domain.Enums;
 using static TelegramBot.Domain.Collections.Keyboards;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using TelegramBot.Domain.Collections;
-using TelegramBot.Domain.Repositories;
-using System.Diagnostics;
 using TelegramBot.Contracts;
 
 
@@ -113,9 +107,8 @@ public class UpdateHandler : IUpdateHandler
             AdminProfile Admin = (AdminProfile)person;
             Message sentMessage = await (messageText.Split(' ')[0] switch
             {
-                "/start" => GetAdminPanel(msg, Admin, cancellationToken),
                 "/admin" => GetAdminPanel(msg, Admin, cancellationToken),
-                "/getall" => AdminGetAllRegistratedUsers(msg, Admin, cancellationToken),
+                "/getEventDebug" => HandleGetEvent(msg, Admin, cancellationToken),
                 "/deleteDebug" => DeleteProfileDebug(msg, Admin, cancellationToken),
                 _ => HandleAdminInput(msg, Admin, cancellationToken)
             });
@@ -128,9 +121,8 @@ public class UpdateHandler : IUpdateHandler
             {
                 Message sentMessage = await (messageText.Split(' ')[0] switch
                 {
-                    "/getadmin" => GetAdminRole(msg, User, cancellationToken),
                     "/deleteDebug" => DeleteProfileDebug(msg, User, cancellationToken),
-                    "/unregister" => UnregisterUser(msg, User, cancellationToken),
+                    "/getEvent" =>HandleGetEvent(msg, User, cancellationToken),
                     _ => HandleUserInput(msg, User, cancellationToken)
                 });
                 logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage?.MessageId);
@@ -140,7 +132,6 @@ public class UpdateHandler : IUpdateHandler
                 Message sentMessage = await (messageText.Split(' ')[0] switch
                 {
                     "/deleteDebug" => DeleteProfileDebug(msg, User, cancellationToken),
-                    "/unregister" => UnregisterUser(msg, User, cancellationToken),
                     _ => HandleUserInput(msg, User, cancellationToken)
                 });
 
@@ -148,6 +139,7 @@ public class UpdateHandler : IUpdateHandler
             }
         }
     }
+                                    
     private async Task<Message> HandleUserInput(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
     {
         return await (userProfile.UserState switch
@@ -156,14 +148,149 @@ public class UpdateHandler : IUpdateHandler
             UserStates.awaiting_Eighteen => HandleChekIsEighteen(msg, userProfile, cancellationToken),
             UserStates.awaiting_name => HandleAwaitingName(msg, userProfile, cancellationToken),
             UserStates.awaiting_phone => HandleAwaitingPhone(msg, userProfile, cancellationToken),
-            _ => GetRegistrationInfo(msg, userProfile, cancellationToken)
+            _ => HandleGetUserMenu(msg, userProfile, cancellationToken)
         });
     }
 
     #endregion
 
-    #region Filling in user data
 
+    #region Обработка Нажатий кнопок
+
+    private async Task OnCallbackQuery(CallbackQuery callbackQuery, CancellationToken cancellationToken)
+    {
+        Message msg = callbackQuery.Message;
+
+        logger.LogInformation($"Received callback type: {msg.Type}");
+
+        Person? person = await personService.Get(msg.Chat.Id, cancellationToken);
+
+        // Инициализация профиля пользователя при первом обращении
+        if (person == null)
+        {
+            person = Person.Create(msg.Chat.Id);
+        }
+        Message sentMessage = null;
+        if (callbackQuery.Data[0] == ':')
+        {
+            Guid eventId;
+            char command = callbackQuery.Data[1];
+            string temp = callbackQuery.Data.Substring(2);
+            if (Guid.TryParse(temp, out eventId))
+            {
+                if (person.role == Roles.Admin)
+                {
+                    AdminProfile Admin = (AdminProfile)person;
+                    sentMessage = await (command switch
+                    {
+                        'a' => AdminGetAllRegistratedUsers(msg, Admin, eventId, cancellationToken),
+                        's' => SwitchNotificationNewUsers(msg, Admin, eventId, cancellationToken),
+                        'd' => AdminDeleteEvent(msg, Admin, eventId, cancellationToken)
+                    });
+                }
+                else
+                {
+                    UserProfile User = (UserProfile)person;
+                    sentMessage = await (command switch
+                    {
+                        'r' => ChooseEvent(msg, User, eventId, cancellationToken),
+                        'u' => UnregisterUser(msg, User, eventId, cancellationToken)
+                    });
+                }
+            }
+        }
+        else
+        {
+            if (person.role == Roles.Admin)
+            {
+                AdminProfile Admin = (AdminProfile)person;
+                sentMessage = await (callbackQuery.Data switch
+                {
+                    "/getMenu" => GetAdminPanel(msg, Admin, cancellationToken),
+                    "/getUsers" => HandleAdminGetAllRegistratedUsers(msg, Admin, cancellationToken),
+                    "/switchNotification" => HandleSwitchNotificationNewUsers(msg, Admin, cancellationToken),
+                    "/deleteEvent" => HandleAdminDeleteEvent(msg, Admin, cancellationToken),
+                    "/createEvent" => HandleCreateEvent(msg, Admin, cancellationToken),
+                    _ => HandleAdminInput(msg, Admin, cancellationToken)
+                });
+            }
+            else
+            {
+                UserProfile User = (UserProfile)person;
+                sentMessage = await (callbackQuery.Data switch
+                {
+                    "/getMenu" => HandleGetUserMenu(msg, User, cancellationToken),
+                    "/getEvent" => HandleGetEvent(msg, User, cancellationToken),
+                    "/getRegisterEvents" => HandleGetUserRegisteredEvents(msg, User, cancellationToken),
+                    "/unregister" => HandleUnregisterEvent(msg, User, cancellationToken),
+                    "yes" => HandleChekIsEighteen(msg, User, cancellationToken, "yes"),
+                    "no" => HandleChekIsEighteen(msg, User, cancellationToken, "no"),
+                    "/start" => StartRegistration(msg, User, cancellationToken),
+                    "/back" => ChangeThePreviousField(msg, User, cancellationToken),
+                    _ => HandleUserInput(msg, User, cancellationToken)
+                });
+            }
+        }
+        // Отправляем ответ на нажатие кнопки, чтобы сразу отключить анимацию
+        await bot.AnswerCallbackQuery(callbackQuery.Id, cancellationToken: cancellationToken);
+        person.LastProfileMessageId = sentMessage.Id;
+
+        logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage?.MessageId);
+    }
+
+    #endregion
+
+
+    #region работа с данными пользователя
+    private async Task<Message> HandleGetUserMenu(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
+    {
+        if (userProfile.IsRegistered)
+        {
+            return await EditOrSendMessage(msg, userProfile, "Меню", GetUserMenuKeyboard(), cancellationToken);
+        }
+        return await EditOrSendMessage(msg,userProfile, Messages.RegistrationOnly18,null,cancellationToken);
+
+    }
+
+    private async Task<Message> ChangeThePreviousField(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
+    {
+        userProfile.ToPreviousState();
+        await userProfileService.Update(userProfile, cancellationToken);
+
+        string promptMessage = userProfile.UserState switch
+        {
+            UserStates.awaiting_registration => Messages.GoRegistration,
+            UserStates.awaiting_Eighteen => Messages.AreYou18,
+            UserStates.awaiting_name => Messages.PrintYouName,
+            UserStates.awaiting_phone => Messages.PrintPhoneNumber,
+            _ => Messages.SomethingWentWrong
+        };
+
+        if (userProfile.UserState is UserStates.awaiting_registration or UserStates.awaiting_name)
+            return await bot.SendMessage(
+            chatId: msg.Chat.Id,
+            text: promptMessage,
+            replyMarkup: new ReplyKeyboardRemove(),
+            cancellationToken: cancellationToken
+            );
+        return await bot.SendMessage(
+            chatId: msg.Chat.Id,
+            text: promptMessage,
+            replyMarkup: GetKeyBoardInRegistration(),
+            cancellationToken: cancellationToken
+        );
+    }
+
+    private async Task<Message> StartRegistration(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
+    {
+        if (userProfile.StartRegistration())
+        {
+            await userProfileService.Update(userProfile, cancellationToken);
+
+            return await bot.SendMessage(msg.Chat.Id, Messages.AreYou18, parseMode: ParseMode.Html, replyMarkup: GetKeyBoardYesOrNo(), cancellationToken: cancellationToken);
+        }
+        return await bot.SendMessage(msg.Chat.Id, "Вы уже зарегестрированы", ParseMode.Html, replyMarkup: new ReplyKeyboardRemove(), cancellationToken: cancellationToken);
+    }
     private async Task<Message> HandleChekIsEighteen(Message msg, UserProfile userProfile, CancellationToken cancellationToken, string messageText = null)
     {
         messageText ??= msg.Text;
@@ -179,33 +306,14 @@ public class UpdateHandler : IUpdateHandler
     private async Task<Message> HandleAwaitingName(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
     {
         var chatId = msg.Chat.Id;
-        if (userProfile.IsRegistered)
+        if (!userProfile.IsRegistered&& userProfile.SetName(msg.Text))
         {
-            if (userProfile.SetName(msg.Text, UserStates.completed))
-            {
-                await userProfileService.Update(userProfile, cancellationToken);
-                return await bot.SendMessage(chatId, $"Имя успешно изменёно на {msg.Text}.\n" + GetUserProfileInfo(userProfile), replyMarkup: new ReplyKeyboardRemove());
-            }
-            return await bot.SendMessage(chatId, Messages.SomethingWentWrong, replyMarkup: GetKeyBoardCancel());
-        }
-        else 
-        {
-            if (userProfile.SetName(msg.Text))
-            {
-                await userProfileService.Update(userProfile, cancellationToken);
-                return await bot.SendMessage(chatId, Messages.PrintPhoneNumber, replyMarkup: GetKeyBoardInRegistration());
-            }
+            await userProfileService.Update(userProfile, cancellationToken);
+            return await bot.SendMessage(chatId, Messages.PrintPhoneNumber, replyMarkup: GetKeyBoardInRegistration());
         }
         return await bot.SendMessage(chatId,Messages.SomethingWentWrong, replyMarkup: new ReplyKeyboardRemove());
     }
 
-    /// <summary>
-    /// Обработка ввода номера телефона в систему
-    /// </summary>
-    /// <param name="msg">Сообщение с номером телефона</param>
-    /// <param name="userProfile">Профиль для изменения номера телефона</param>
-    /// <param name="cancellationToken"></param>
-    /// <returns>Возвращает сообщение для вывода пользователю</returns>
     private async Task<Message> HandleAwaitingPhone(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
     {
         var chatId = msg.Chat.Id;
@@ -223,8 +331,7 @@ public class UpdateHandler : IUpdateHandler
             if (userProfile.SetPhoneNumber(msg.Text))
             {
                 await userProfileService.Update(userProfile, cancellationToken);
-                await AdminGetUsersNotification(userProfile,Messages.NewUserRegistered, cancellationToken);
-                return await bot.SendMessage(chatId, Messages.YouHaveRegisteredForTheEvent, replyMarkup: new ReplyKeyboardRemove());
+                return await HandleGetEvent(msg,userProfile, cancellationToken);
             }
             
         }
@@ -232,27 +339,81 @@ public class UpdateHandler : IUpdateHandler
 
     }
 
-    private async Task<Message> GetRegistrationInfo(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
+    private async Task<Message> HandleGetEvent(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
     {
-        var chatId = msg.Chat.Id;
+        var chatId = msg?.Chat?.Id;
         if (userProfile.IsRegistered)
         {
-            return await bot.SendMessage(chatId, Messages.YouHaveRegisteredForTheEvent, replyMarkup: new ReplyKeyboardRemove());
+            var events = await eventService.GetAll(cancellationToken,u=>!u.UserProfiles.Contains(userProfile));
+            return await EditOrSendMessage(msg, userProfile, GetEventsString(events, Messages.Event.AllowedToRegistr), GetEventKeyboard(events, 'r'), cancellationToken: cancellationToken);
         }
-        return await bot.SendMessage(chatId, Messages.RegistrationOnly18, replyMarkup: new ReplyKeyboardRemove());
-        
+        return await bot.SendMessage(chatId, Messages.SomethingWentWrong, replyMarkup: new ReplyKeyboardRemove());
     }
+
+    private async Task<Message> ChooseEvent(Message msg, UserProfile userProfile,Guid eventId, CancellationToken cancellationToken)
+    {
+        Event? myEvent = await eventService.Get(eventId,cancellationToken);
+        if (myEvent == null)
+        {
+            return await EditOrSendMessage(msg,userProfile, Messages.SomethingWentWrong, GetUserMenuKeyboard(),cancellationToken);
+        }
+        if(!await userProfileService.Register(userProfile, myEvent,cancellationToken))
+        {
+            return await bot.SendMessage(msg.Chat.Id, Messages.ErrorInRegistrOnEvent, replyMarkup: GetUserMenuKeyboard());
+        }
+        //return await bot.SendMessage(msg.Chat.Id, Messages.YouHaveRegisteredForTheEvent + "\n" + myEvent.ToString(), replyMarkup: GetUserMenuKeyboard());
+        return await EditOrSendMessage(msg,userProfile, Messages.YouHaveRegisteredForTheEvent +"\n"+ myEvent.ToString() , GetUserMenuKeyboard(),cancellationToken);
+
+    }
+
+    private async Task<Message> HandleUnregisterEvent(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
+    {
+        var events = await eventService.GetAll(cancellationToken,u=>u.UserProfiles.Contains(userProfile));
+        return await EditOrSendMessage(msg,userProfile, GetEventsString(events,Messages.Event.YourEvents), GetEventKeyboard(events, 'u'), cancellationToken: cancellationToken);
+    }
+
+    private async Task<Message> UnregisterUser(Message msg, UserProfile userProfile, Guid eventId, CancellationToken cancellationToken)
+    {
+        Event? unregisterEvent = await eventService.Get(eventId, cancellationToken);
+        if (unregisterEvent == null)
+        {
+            return await bot.SendMessage(msg.Chat.Id, Messages.Admin.EventNotFound);
+        }
+        await userProfileService.Unregister(userProfile, unregisterEvent, cancellationToken);
+        await AdminGetUsersNotification(userProfile, eventId, Messages.Admin.UserUnregrisered, cancellationToken);
+        return await EditOrSendMessage(msg,userProfile, Messages.YouHasUnregistered+" "+ unregisterEvent.ToString(),GetUserMenuKeyboard(),cancellationToken);
+    }
+
+    private async Task<Message> HandleGetUserRegisteredEvents(Message msg,UserProfile userProfile,CancellationToken cancellationToken)
+    {
+        var events = await eventService.GetAll(cancellationToken, u => u.UserProfiles.Contains(userProfile));
+        return await EditOrSendMessage(msg,userProfile, GetEventsString(events,Messages.Event.YourEvents), GetUserMenuInEventsKeyboard(), cancellationToken);
+    }
+
 
     #endregion
 
-
-    #region Get Profile Info
+    #region Get Info
     private string GetUserProfileInfo(UserProfile profile)
     {
         return $"Профиль: Имя: {profile.Name}\n" +
                $"Телефон: {profile.PhoneNumber}\n";
     }
-
+    private string GetEventsString(IEnumerable<Event> events,string message = "Мероприятия")
+    {
+        string eventString = message+":\n";
+        int i = 0;
+        foreach (var x in events)
+        {
+            i++;
+            eventString +=$"№{i}. {x.Date.ToString()} {x.Name} \n";
+        }
+        if (i == 0)
+        {
+            return "Мероприятий не найдено";
+        }
+        return eventString;
+    }
     private async Task<Message> EditOrSendMessage(Message msg, Person person,string _text, InlineKeyboardMarkup _replyMarkup, CancellationToken cancellationToken)
     {
 
@@ -302,149 +463,56 @@ public class UpdateHandler : IUpdateHandler
     }
     #endregion
 
-
-    /// <summary>
-    /// Вывод основных команд для работы с телеграм ботом.
-    /// </summary>
-    /// <param name="msg">Принятое сообщение от пользователя.</param>
-    /// <returns>Задачу вывода сообщения пользователю</returns>
-    private async Task<Message> Usage(Message msg)
-    {
-        const string usage = """
-            <b><u>Bot menu</u></b>:
-            /start        - начать регистрацию
-            /me           - показать профиль
-            /debug        - показать отладочную информацию о пользователе
-        """;
-        return await bot.SendMessage(msg.Chat.Id, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
-    }
-
-
-    private async Task OnCallbackQuery(CallbackQuery callbackQuery, CancellationToken cancellationToken)
-    {
-        Message msg = callbackQuery.Message;
-        
-        logger.LogInformation($"Received callback type: {msg.Type}");
-
-
-        Person? person = await personService.Get(msg.Chat.Id, cancellationToken);
-
-        // Инициализация профиля пользователя при первом обращении
-        if (person == null)
-        {
-            person = Person.Create(msg.Chat.Id);
-        }
-        Message sentMessage = null;
-        if (person.role == Roles.Admin)
-        {
-            AdminProfile Admin = (AdminProfile)person;
-            sentMessage = await (callbackQuery.Data switch
-            {
-                "/getall" => AdminGetAllRegistratedUsers(msg, Admin, cancellationToken),
-                ///"/switchNotify" => SwitchNotificationNewUsers(msg, adminProfile, cancellationToken),
-                _ => HandleAdminInput(msg, Admin, cancellationToken)
-            });
-        }
-        else
-        {
-            UserProfile User = (UserProfile)person;
-            sentMessage = await (callbackQuery.Data switch
-            {
-                "yes" => HandleChekIsEighteen(msg, User, cancellationToken, "yes"),
-                "no" => HandleChekIsEighteen(msg, User, cancellationToken, "no"),
-                "/start" => StartRegistration(msg, User, cancellationToken),
-                "/back" => ChangeThePreviousField(msg, User, cancellationToken),
-                "/unregister" => UnregisterUser(msg, User, cancellationToken),
-                _ => HandleUserInput(msg, User, cancellationToken)
-            });
-        }
-
-        // Отправляем ответ на нажатие кнопки, чтобы сразу отключить анимацию
-        await bot.AnswerCallbackQuery(callbackQuery.Id, cancellationToken: cancellationToken);
-        person.LastProfileMessageId = sentMessage.Id;
-
-        logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage?.MessageId);
-    }
-
-
-    private async Task<Message> ChangeThePreviousField(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
-    {
-        userProfile.ToPreviousState();
-        await userProfileService.Update(userProfile, cancellationToken);
-
-        string promptMessage = userProfile.UserState switch
-        {
-            UserStates.awaiting_registration=>Messages.GoRegistration,
-            UserStates.awaiting_Eighteen=>Messages.AreYou18,
-            UserStates.awaiting_name => Messages.PrintYouName,
-            UserStates.awaiting_phone => Messages.PrintPhoneNumber,
-            _ => Messages.SomethingWentWrong
-        };
-
-        if(userProfile.UserState is UserStates.awaiting_registration or UserStates.awaiting_name)
-            return await bot.SendMessage(
-            chatId: msg.Chat.Id,
-            text: promptMessage,
-            replyMarkup: new ReplyKeyboardRemove(),
-            cancellationToken: cancellationToken
-            );
-        return await bot.SendMessage(
-            chatId: msg.Chat.Id,
-            text: promptMessage,
-            replyMarkup: GetKeyBoardInRegistration(),
-            cancellationToken: cancellationToken
-        );
-    }
-
-    private async Task<Message> StartRegistration(Message msg,UserProfile userProfile,CancellationToken cancellationToken)
-    {
-        if (userProfile.StartRegistration())
-        {
-            await userProfileService.Update(userProfile, cancellationToken);
-            
-            return await bot.SendMessage(msg.Chat.Id, Messages.AreYou18, parseMode: ParseMode.Html, replyMarkup: GetKeyBoardYesOrNo(),cancellationToken:cancellationToken);
-        }
-        return await bot.SendMessage(msg.Chat.Id, "Вы уже зарегестрированы", ParseMode.Html, replyMarkup: new ReplyKeyboardRemove(), cancellationToken:cancellationToken);
-    }
-    private async Task<Message> UnregisterUser(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
-    {
-        logger.LogInformation(await userProfileService.Delete(userProfile, cancellationToken));
-        await AdminGetUsersNotification(userProfile,Messages.UserUnregrisered, cancellationToken);
-        return await bot.SendMessage(msg.Chat.Id, "Вы отменили регистрацию");
-    }
-
     #region Admin panel
 
-    private async Task<Message> GetAdminRole(Message msg,UserProfile userProfile,CancellationToken cancellationToken)
+
+    private async Task<Message> HandleSwitchNotificationNewUsers(Message msg,AdminProfile adminProfile,CancellationToken cancellationToken)
     {
-        if (userProfile.SetAdmin()) 
-        {
-            await userProfileService.Update(userProfile, cancellationToken);
-            return await bot.SendMessage(msg.Chat.Id, "Вам выдана роль администратора", parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
-        }
-        return await bot.SendMessage(msg.Chat.Id, "Вы не внесены в список администраторов, обратитесь к разработчику", parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
+        var chatId = msg?.Chat?.Id;
+        var events = await eventService.GetAll(cancellationToken);
+        return await EditOrSendMessage(msg, adminProfile, GetEventsString(events), GetEventKeyboard(events, 's'), cancellationToken);
     }
-           //TO DO Реализовать получение списка евентов и выбор их
-    /*private async Task<Message> SwitchNotificationNewUsers(Message msg, AdminProfile adminProfile, CancellationToken cancellationToken)
+    private async Task<Message> SwitchNotificationNewUsers(Message msg, AdminProfile adminProfile,Guid eventId, CancellationToken cancellationToken)
     {
-        Event myEvent = eventService.Get(msg.Text)
-        adminProfile.ChangeNotification();
+        Event myEvent = await eventService.Get(eventId,cancellationToken);
+        adminProfile.ChangeNotification(myEvent);
         await adminProfileService.Update(adminProfile, cancellationToken);
-        if(adminProfile.)
+        if(adminProfile.IsNotification(myEvent))
         {
             return await EditOrSendMessage(msg, adminProfile, "Вы будете получать оповещения о новых пользователях", GetAdminKeyboard(), cancellationToken);
         }
         return await EditOrSendMessage(msg, adminProfile, "Вы больше не будете получать оповещения о новых пользователях", GetAdminKeyboard(), cancellationToken);
-
-    }*/
-
-    private async Task<Message> GetAdminPanel(Message msg,AdminProfile adminProfile,CancellationToken cancellationToken)
-    {
-        return await bot.SendMessage(msg.Chat.Id, "Menu", replyMarkup: GetAdminKeyboard(), cancellationToken: cancellationToken);
     }
-    private async Task<Message> AdminGetAllRegistratedUsers(Message msg, AdminProfile adminProfile, CancellationToken cancellationToken)
+
+    private async Task<Message> HandleAdminDeleteEvent(Message msg, AdminProfile adminProfile, CancellationToken cancellationToken)
     {
-        var result = await userProfileService.GetAll(cancellationToken);
+        var chatId = msg?.Chat?.Id;
+        var events = await eventService.GetAll(cancellationToken);
+        return await EditOrSendMessage(msg,adminProfile, GetEventsString(events), GetEventKeyboard(events, 'd'),cancellationToken);
+    }
+    private async Task<Message> AdminDeleteEvent(Message msg, AdminProfile admin, Guid eventId, CancellationToken cancellationToken)
+    {
+        Event deleteEvent = await eventService.Get(eventId, cancellationToken);
+        logger.LogInformation(await eventService.Delete(deleteEvent,cancellationToken));
+        return await EditOrSendMessage(msg, admin, "Мероприятие удалено ", GetAdminKeyboard(), cancellationToken);
+    }
+
+
+    private async Task<Message> HandleAdminGetAllRegistratedUsers(Message msg,AdminProfile adminProfile,CancellationToken cancellationToken)
+    {
+        var chatId = msg?.Chat?.Id;
+        var events = await eventService.GetAll(cancellationToken);
+        return await EditOrSendMessage(msg, adminProfile, GetEventsString(events), GetEventKeyboard(events, 'a'), cancellationToken);
+
+    }
+    private async Task<Message> AdminGetAllRegistratedUsers(Message msg, AdminProfile adminProfile,Guid eventId, CancellationToken cancellationToken)
+    {
+        Event? myEvent = await eventService.Get(eventId,cancellationToken) ;
+        if (myEvent == null)
+        {
+            return await EditOrSendMessage(msg, adminProfile, "Мероприятие не найдено", GetAdminKeyboard(), cancellationToken: cancellationToken);
+        }
+        var result = await userProfileService.GetAllByEvent(myEvent,cancellationToken);
         string? listAllUsers = null;
         IEnumerable <UserProfileResponse> users = result.Select(u => new UserProfileResponse {Id=u.Id, Name = u.Name, PhoneNumber = u.PhoneNumber });
         int i = 0;
@@ -453,14 +521,16 @@ public class UpdateHandler : IUpdateHandler
             i++;
             listAllUsers += $" №{i} Имя: {user.Name} Номер телефона: {user.PhoneNumber} ";
         }
-        Message csvFileMessage = await CsvFileHelper<UserProfileResponse>.WriteFileToCsv(bot, msg.Chat.Id, users);
-        logger.LogInformation("The message with CSV file send with Id: {SentMessageId}", csvFileMessage?.Id);
-
+        if (i != 0)
+        {
+            Message csvFileMessage = await CsvFileHelper<UserProfileResponse>.WriteFileToCsv(bot, msg.Chat.Id, users);
+            logger.LogInformation("The message with CSV file send with Id: {SentMessageId}", csvFileMessage?.Id);
+        }
         return await EditOrSendMessage(msg,adminProfile, listAllUsers??="Пользователей не найдено", GetAdminKeyboard(), cancellationToken: cancellationToken);
-    }               
+    }
 
 
-    private async Task AdminGetUsersNotification(UserProfile userProfile,string messageText,CancellationToken cancellationToken)
+    private async Task AdminGetUsersNotification(UserProfile userProfile,Guid eventId,string messageText,CancellationToken cancellationToken)
     {
         var admins = await adminProfileService.GetAll(cancellationToken);
         Message message = new Message();
@@ -474,25 +544,138 @@ public class UpdateHandler : IUpdateHandler
 
     private async Task<Message> HandleAdminInput(Message msg,AdminProfile adminProfile,CancellationToken cancellationToken)
     {
+
         return await (adminProfile.AdminState switch
         {
+            AdminStates.create_event => HandleCreateEvent(msg,adminProfile,cancellationToken),
+            AdminStates.awaiting_eventName => HandleEventName(msg,adminProfile,cancellationToken),
+            AdminStates.awaiting_eventDateTime=>HandleEventDate(msg,adminProfile,cancellationToken),
+            AdminStates.awaiting_eventDescription => HandleEventDescription(msg,adminProfile,cancellationToken),
             _ => GetAdminPanel(msg, adminProfile, cancellationToken),
         });
     }
 
+    private async Task<Message> GetAdminPanel(Message msg, AdminProfile adminProfile, CancellationToken cancellationToken)
+    {
+        return await EditOrSendMessage(msg, adminProfile, "Admin menu", GetAdminKeyboard(), cancellationToken: cancellationToken);
+    }
+
+
+
     #endregion
+
+    #region Процесс создания мероприятия
+
+    private async Task<Message> HandleCreateEvent(Message msg,AdminProfile admin,CancellationToken cancellationToken)
+    {
+        if (admin.CurrentEvent != null)
+        {
+            return await bot.SendMessage(msg.Chat.Id, Messages.Admin.YouAlreadyOperatingWithEvent, parseMode: ParseMode.Html, replyMarkup: GetAdminKeyboard(), cancellationToken: cancellationToken);
+        }
+        Event newEvent = new ();
+        await eventService.Create(newEvent, cancellationToken);
+        admin.SetCurrentEvent(newEvent.Id);
+        await adminProfileService.Update(admin, cancellationToken);
+            
+        return await EditOrSendMessage(msg,admin, Messages.Admin.PrintEventName, null, cancellationToken);
+    }
+
+
+    private async Task<Message> HandleEventName(Message msg, AdminProfile admin, CancellationToken cancellationToken)
+    {
+        if (admin.CurrentEvent == null||string.IsNullOrEmpty(msg.Text))
+        {
+            return await bot.SendMessage(msg.Chat.Id, Messages.SomethingWentWrong, parseMode: ParseMode.Html, replyMarkup: GetAdminKeyboard(), cancellationToken: cancellationToken);
+        }
+
+        Event newEvent = await eventService.Get(admin.CurrentEvent, cancellationToken);
+        if (newEvent == null)
+        {
+            admin.ResetCurrentEvent();
+            await adminProfileService.Update(admin, cancellationToken);
+            return await bot.SendMessage(msg.Chat.Id, Messages.Admin.EventNotFound, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove(), cancellationToken: cancellationToken);
+        }
+        newEvent.Name = msg.Text;
+        admin.SetAdminState(AdminStates.awaiting_eventDateTime);
+        await Task.WhenAll(
+            adminProfileService.Update(admin, cancellationToken),
+            eventService.Update(newEvent, cancellationToken)
+            );
+        return await bot.SendMessage(msg.Chat.Id, Messages.Admin.PrintEventDateTime, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove(), cancellationToken: cancellationToken);
+    }
+
+
+    private async Task<Message> HandleEventDate(Message msg, AdminProfile admin, CancellationToken cancellationToken)
+    {
+        if (admin.CurrentEvent == null || string.IsNullOrEmpty(msg.Text))
+        {
+            return await bot.SendMessage(msg.Chat.Id, Messages.SomethingWentWrong, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove(), cancellationToken: cancellationToken);
+        }
+
+        Event newEvent = await eventService.Get(admin.CurrentEvent, cancellationToken);
+        if (newEvent == null)
+        {
+            admin.ResetCurrentEvent();
+            await adminProfileService.Update(admin, cancellationToken);
+            return await bot.SendMessage(msg.Chat.Id, Messages.Admin.EventNotFound, parseMode: ParseMode.Html, replyMarkup: GetAdminKeyboard(), cancellationToken: cancellationToken);
+        }
+
+        if (!newEvent.SetDate(msg.Text))
+        {
+            return await bot.SendMessage(msg.Chat.Id, Messages.Admin.WrongDateTimeFormat, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove(), cancellationToken: cancellationToken);
+        }
+
+        admin.SetAdminState(AdminStates.awaiting_eventDescription);
+        await Task.WhenAll(
+            adminProfileService.Update(admin, cancellationToken),
+            eventService.Update(newEvent, cancellationToken)
+            );
+        return await bot.SendMessage(msg.Chat.Id, Messages.Admin.PrintEventDescription, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove(), cancellationToken: cancellationToken);
+    }
+    private async Task<Message> HandleEventDescription(Message msg, AdminProfile admin, CancellationToken cancellationToken)
+    {
+        if (admin.CurrentEvent == null || string.IsNullOrEmpty(msg.Text))
+        {
+            return await bot.SendMessage(msg.Chat.Id, Messages.SomethingWentWrong, parseMode: ParseMode.Html, replyMarkup: GetAdminKeyboard(), cancellationToken: cancellationToken);
+        }
+
+        Event newEvent = await eventService.Get(admin.CurrentEvent, cancellationToken);
+        if (newEvent == null)
+        {
+            admin.ResetCurrentEvent();
+            await adminProfileService.Update(admin, cancellationToken);
+            return await bot.SendMessage(msg.Chat.Id, Messages.Admin.EventNotFound, parseMode: ParseMode.Html, replyMarkup: GetAdminKeyboard(), cancellationToken: cancellationToken);
+        }
+        newEvent.Description = msg.Text;
+        admin.ResetCurrentEvent();
+        admin.SetAdminState(AdminStates.completed);
+        await Task.WhenAll(
+            adminProfileService.Update(admin, cancellationToken),
+            eventService.Update(newEvent, cancellationToken)
+            );
+        return await EditOrSendMessage(msg,admin, Messages.Admin.EventsuccessfullyCreated, GetAdminKeyboard(), cancellationToken);
+    }
+
+
+    private async Task<Message> HandleGetEvent(Message msg, AdminProfile adminProfile, CancellationToken cancellationToken)
+    {
+        var chatId = msg?.Chat?.Id;
+        var events = await eventService.GetAll(cancellationToken);
+        return await bot.SendMessage(chatId, GetEventsString(events), replyMarkup: new ReplyKeyboardRemove());
+    }
+    #endregion
+
+    #region Неиспользуемые методы
 
     private async Task UnknownUpdateHandlerAsync(Update update)
     {
         logger.LogInformation("Unknown update type: {Update}", update.Type);
         
     }
-
     private async Task OnPoll(Poll poll)
     {
         logger.LogInformation("Poll received");
     }
-
     private async Task OnPollAnswer(PollAnswer pollAnswer)
     {
         logger.LogInformation("Poll answer received");
@@ -507,6 +690,7 @@ public class UpdateHandler : IUpdateHandler
     {
         logger.LogInformation("Chosen inline result received");
     }
+    #endregion
 
     #region Debug Operations
     private async Task<Message> DeleteProfileDebug(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
