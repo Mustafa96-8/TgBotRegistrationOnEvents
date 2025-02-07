@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using TelegramBot.Domain.Repositories.IRepositories;
 using TelegramBot.Domain.Entities;
 using TelegramBot.Services.TelegramServices;
+using TelegramBot.Handlers;
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>

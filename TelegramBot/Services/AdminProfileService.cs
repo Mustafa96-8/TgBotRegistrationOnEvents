@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using TelegramBot.Domain.Entities;
@@ -22,9 +23,9 @@ public class AdminProfileService
         return adminProfile;
     }
 
-    public async Task<IEnumerable<AdminProfile>> GetAll(CancellationToken ct)
+    public async Task<IEnumerable<AdminProfile>> GetAll(CancellationToken ct, Expression<Func<AdminProfile, bool>> filter = null)
     {
-        IEnumerable<AdminProfile> admins = await unitOfWork.AdminProfileRepository.Get(ct);
+        IEnumerable<AdminProfile> admins = await unitOfWork.AdminProfileRepository.Get(ct,filter);
         return admins;
     }
 

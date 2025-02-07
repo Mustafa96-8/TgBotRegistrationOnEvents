@@ -10,15 +10,12 @@
 
   <ItemGroup>
     <Compile Remove="Files\**" />
-    <Compile Remove="Handlers\**" />
     <Compile Remove="Repositories\**" />
     <Content Remove="Files\**" />
     <Content Remove="Repositories\**" />
     <EmbeddedResource Remove="Files\**" />
-    <EmbeddedResource Remove="Handlers\**" />
     <EmbeddedResource Remove="Repositories\**" />
     <None Remove="Files\**" />
-    <None Remove="Handlers\**" />
     <None Remove="Repositories\**" />
   </ItemGroup>
 
@@ -44,10 +41,6 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.1" />
     <PackageReference Include="Telegram.Bot" Version="22.3.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Services\UpdateHandlers\" />
   </ItemGroup>
 
 </Project>
