@@ -20,7 +20,6 @@ namespace TelegramBot.Domain
             }
             catch (Exception)
             {
-                Database.EnsureDeleted();
                 Database.EnsureCreated(); // Создаем новую БД
             }
         }
