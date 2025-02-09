@@ -24,13 +24,13 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.AddHttpClient("telegram_bot_client")
                 .AddTypedClient<ITelegramBotClient>((httpClient, sp) =>
                 {
-                    var botConfiguration = sp.GetRequiredService<IOptions<BotConfiguration>>().Value;
-                    if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("BOTTOKEN")))
+                    string? botToken = Environment.GetEnvironmentVariable("BOTTOKEN");
+                    if (string.IsNullOrWhiteSpace(botToken))
                     {
                         throw new InvalidOperationException("Bot token is not configured.");
                     }
 
-                    TelegramBotClientOptions options = new(botConfiguration.BotToken);
+                    TelegramBotClientOptions options = new(botToken);
                     return new TelegramBotClient(options, httpClient);
                 });
 
