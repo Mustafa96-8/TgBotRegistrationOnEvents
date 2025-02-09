@@ -9,13 +9,13 @@ using TelegramBot.Domain.Repositories.IRepositories;
 using TelegramBot.Domain.Entities;
 using TelegramBot.Services.TelegramServices;
 using TelegramBot.Handlers;
+using 
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
-        services.Configure<BotConfiguration>(context.Configuration.GetSection("BotConfiguration"));
         services.AddDbContext<ApplicationContext>(options =>
-            options.UseSqlite(context.Configuration.GetConnectionString("DefaultConnection")));
+            options.UseSqlite(Environment.GetEnvironmentVariable("CONNECTIONSTRING")));
         services.AddScoped<IUnitOfWork,UnitOfWork>();
         services.AddScoped<UserProfileService>();
         services.AddScoped<AdminProfileService>();
@@ -25,7 +25,7 @@ IHost host = Host.CreateDefaultBuilder(args)
                 .AddTypedClient<ITelegramBotClient>((httpClient, sp) =>
                 {
                     var botConfiguration = sp.GetRequiredService<IOptions<BotConfiguration>>().Value;
-                    if (string.IsNullOrWhiteSpace(botConfiguration.BotToken))
+                    if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("BOTTOKEN")))
                     {
                         throw new InvalidOperationException("Bot token is not configured.");
                     }
