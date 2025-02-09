@@ -14,6 +14,15 @@ namespace TelegramBot.Domain
         public ApplicationContext(DbContextOptions<ApplicationContext> options)
             : base(options)
         {
+            try
+            {
+                Database.OpenConnection();  // Пробуем открыть соединение
+            }
+            catch (Exception)
+            {
+                Database.EnsureDeleted();
+                Database.EnsureCreated(); // Создаем новую БД
+            }
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
