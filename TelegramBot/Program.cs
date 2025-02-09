@@ -15,7 +15,7 @@ IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
         services.AddDbContext<ApplicationContext>(options =>
-            options.UseSqlite(Environment.GetEnvironmentVariable("CONNECTIONSTRING")));
+            options.UseSqlite(Environment.GetEnvironmentVariable("CONNECTIONSTRING") ?? throw new InvalidOperationException("Database connection string is not configured.")));
         services.AddScoped<IUnitOfWork,UnitOfWork>();
         services.AddScoped<UserProfileService>();
         services.AddScoped<AdminProfileService>();
