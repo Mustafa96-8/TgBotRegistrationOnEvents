@@ -20,7 +20,7 @@ namespace TelegramBot.Domain
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlite("Data Source=/data/mydatabase.db");
+                optionsBuilder.UseSqlite("Data Source=data/mydatabase.db");
             }
 
             base.OnConfiguring(optionsBuilder);
