@@ -533,8 +533,9 @@ public class UpdateHandler : IUpdateHandler
         }
         if (i != 0)
         {
-            Message csvFileMessage = await CsvFileHelper<UserProfileResponse>.WriteFileToCsv(bot, msg.Chat.Id, users,myEvent.Name+DateTime.Now);
-            logger.LogInformation("The message with CSV file send with Id: {SentMessageId}", csvFileMessage?.Id);
+            //Message csvFileMessage = await CsvFileHelper<UserProfileResponse>.WriteFileToCsv(bot, msg.Chat.Id, users,myEvent.Name+DateTime.Now);
+            Message excelFileMessage = await ExcelFileHelper<UserProfileResponse>.WriteFileToExcel(bot, msg.Chat.Id, users,myEvent.Name+" "+DateTime.Now);
+            logger.LogInformation("The message with CSV file send with Id: {SentMessageId}", excelFileMessage?.Id);
         }
         return await EditOrSendMessage(msg, adminProfile, listAllUsers ??= "Пользователей не найдено", GetAdminKeyboard(), cancellationToken: cancellationToken);
     }
