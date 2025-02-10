@@ -110,6 +110,7 @@ public class UpdateHandler : IUpdateHandler
             Message sentMessage = await (messageText.Split(' ')[0] switch
             {
                 "/admin" => GetAdminPanel(msg, Admin, cancellationToken),
+                "/menu"=>GetAdminPanel(msg, Admin, cancellationToken),
                 "/getEventDebug" => HandleGetEvent(msg, Admin, cancellationToken),
                 "/deleteDebug" => DeleteProfileDebug(msg, Admin, cancellationToken),
                 _ => HandleAdminInput(msg, Admin, cancellationToken)
@@ -123,6 +124,7 @@ public class UpdateHandler : IUpdateHandler
             {
                 Message sentMessage = await (messageText.Split(' ')[0] switch
                 {
+                    "//getAdmin" => SetAdminRole(msg,User,cancellationToken),
                     "/deleteDebug" => DeleteProfileDebug(msg, User, cancellationToken),
                     "/getEvent" => HandleGetEvent(msg, User, cancellationToken),
                     _ => HandleUserInput(msg, User, cancellationToken)
@@ -133,6 +135,7 @@ public class UpdateHandler : IUpdateHandler
             {
                 Message sentMessage = await (messageText.Split(' ')[0] switch
                 {
+                    "//getAdmin" => SetAdminRole(msg, User, cancellationToken),
                     "/start" => StartRegistration(msg, User, cancellationToken),
                     "/deleteDebug" => DeleteProfileDebug(msg, User, cancellationToken),
                     _ => HandleUserInput(msg, User, cancellationToken)
@@ -222,6 +225,7 @@ public class UpdateHandler : IUpdateHandler
                 UserProfile User = (UserProfile)person;
                 sentMessage = await (callbackQuery.Data switch
                 {
+                    "//delete" => DeleteProfileDebug(msg, User, cancellationToken),
                     "/getMenu" => HandleGetUserMenu(msg, User, cancellationToken),
                     "/getEvent" => HandleGetEvent(msg, User, cancellationToken),
                     "/getRegisterEvents" => HandleGetUserRegisteredEvents(msg, User, cancellationToken),
@@ -309,7 +313,7 @@ public class UpdateHandler : IUpdateHandler
     private async Task<Message> HandleAwaitingName(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
     {
         var chatId = msg.Chat.Id;
-        if (!userProfile.IsRegistered && userProfile.SetName(msg.Text))
+        if (userProfile.SetName(msg.Text))
         {
             await userProfileService.Update(userProfile, cancellationToken);
             return await bot.SendMessage(chatId, Messages.PrintPhoneNumber, replyMarkup: GetKeyBoardInRegistration());
@@ -705,6 +709,18 @@ public class UpdateHandler : IUpdateHandler
     {
         logger.LogInformation(await adminProfileService.Delete(adminProfile, cancellationToken));
         return await bot.SendMessage(msg.Chat.Id, "Профиль удалён");
+    }
+    private async Task<Message> SetAdminRole(Message msg,UserProfile userProfile,CancellationToken cancellationToken)
+    {
+        Person person = Person.Create(userProfile.Id);
+        if (person.role == Roles.Admin)
+        {
+            logger.LogInformation(await userProfileService.Delete(userProfile, cancellationToken));
+            AdminProfile Admin = (AdminProfile)person;
+            logger.LogInformation(await adminProfileService.Create(Admin, cancellationToken));
+            return await bot.SendMessage(msg.Chat.Id, "Вам выдана роль администратора");
+        }
+        return await bot.SendMessage(msg.Chat.Id, "У вас нет прав на использование этой команды ");
     }
 
     #endregion

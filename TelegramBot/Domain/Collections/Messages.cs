@@ -7,7 +7,7 @@ public static class Messages
     public static string PrintPhoneNumber => "Введите ваш номер телефона.(Например: +7 987 654 32 10):";
     public static string ChangingPhoneNumber => "Номер телефона успешно изменён на";
     public static string WrongPhoneNumberFormat=>  "Неверный формат номера. (Например: +7 987 654 32 10):";
-    public static string YouHaveRegisteredForTheEvent => "Вы зарегестрировались на мероприятие, спасибо";
+    public static string YouHaveRegisteredForTheEvent => "Вы зарегестрировались на мероприятие: ";
     public static string AreYou18 => "Вам есть 18?";
     public static string RegistrationOnly18 => "Регистрация только для совершеннолетних пользователей";
     public static string GoRegistration => "Начните регистрацию /start:";
@@ -26,8 +26,8 @@ public static class Messages
         public static string UserUnregrisered => "Пользователь отменил регистрацию: ";
 
         public static string PrintEventName => "Введите название мероприятия:";
-        public static string PrintEventDateTime => "Введите дату и время мероприятия (DD.MM.YYYY):";
-        public static string WrongDateTimeFormat => "Введите дату и время мероприятия (DD.MM.YYYY):";
+        public static string PrintEventDateTime => "Введите дату и время мероприятия (DD.MM.YYYY HH:MM):";
+        public static string WrongDateTimeFormat => "Введите дату и время мероприятия (DD.MM.YYYY HH:MM):";
         public static string PrintEventDescription => "Введите описание мероприятия:";
         public static string EventsuccessfullyCreated => "Мероприятие успешно создано";
         public static string YouAlreadyOperatingWithEvent => "Вы уже работаете с другим мероприятием (если это не так сообщите о этой ошибке)";
