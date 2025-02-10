@@ -9,13 +9,22 @@ using TelegramBot.Domain.Repositories.IRepositories;
 using TelegramBot.Domain.Entities;
 using TelegramBot.Services.TelegramServices;
 using TelegramBot.Handlers;
-using 
+using System.Globalization;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Localization;
+
+
+CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("ru-RU");
+CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("ru-RU");
+
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
+        var connectionString = Environment.GetEnvironmentVariable("CONNECTIONSTRING")
+             ?? context.Configuration.GetConnectionString("DefaultConnection");
         services.AddDbContext<ApplicationContext>(options =>
-            options.UseSqlite(Environment.GetEnvironmentVariable("CONNECTIONSTRING") ?? throw new InvalidOperationException("Database connection string is not configured.")));
+            options.UseSqlite(connectionString ?? throw new InvalidOperationException("Database connection string is not configured.")));
         services.AddScoped<IUnitOfWork,UnitOfWork>();
         services.AddScoped<UserProfileService>();
         services.AddScoped<AdminProfileService>();
@@ -25,6 +34,12 @@ IHost host = Host.CreateDefaultBuilder(args)
                 .AddTypedClient<ITelegramBotClient>((httpClient, sp) =>
                 {
                     string? botToken = Environment.GetEnvironmentVariable("BOTTOKEN");
+                    if (string.IsNullOrWhiteSpace(botToken))
+                    {
+                        services.Configure<BotConfiguration>(context.Configuration.GetSection("BotConfiguration"));
+                        var botConfiguration = sp.GetRequiredService<IOptions<BotConfiguration>>().Value;
+                        botToken = botConfiguration.BotToken;
+                    }
                     if (string.IsNullOrWhiteSpace(botToken))
                     {
                         throw new InvalidOperationException("Bot token is not configured.");
@@ -37,7 +52,16 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.AddScoped<UpdateHandler>();
         services.AddScoped<ReceiverService>();
         services.AddHostedService<PollingService>();
+        services.Configure<RequestLocalizationOptions>(options =>
+        {
+            var supportedCultures = new[]
+            {
+                new CultureInfo("ru-RU")
+            };
+            options.DefaultRequestCulture = new RequestCulture("ru-RU");
+            options.SupportedCultures = supportedCultures;
+            options.SupportedUICultures = supportedCultures;
+        });
     })
     .Build();
-
 await host.RunAsync();
