@@ -26,13 +26,13 @@ public static class Messages
         public static string UserUnregrisered => "Пользователь отменил регистрацию: ";
         public static string PrintNewAdminId => "Введите Telegram id нового администратора:";
         public static string NewAdminAdded => "Новый администратор добавлен";
+        public static string CountOfRegisteredUsersOnEvent => "Зарегестрировано на мероприятие:";
         public static string PrintEventName => "Введите название мероприятия:";
         public static string PrintEventDateTime => "Введите дату и время мероприятия (DD.MM.YYYY HH:MM):";
         public static string WrongDateTimeFormat => "Введите дату и время мероприятия (DD.MM.YYYY HH:MM):";
         public static string PrintEventDescription => "Введите описание мероприятия:";
         public static string EventsuccessfullyCreated => "Мероприятие успешно создано";
         public static string YouAlreadyOperatingWithEvent => "Вы уже работаете с другим мероприятием (если это не так сообщите о этой ошибке)";
-
         public static string EventNotFound => "Мероприятие не найдено в базе данных, обратитесь к разработчику";
     }
 }

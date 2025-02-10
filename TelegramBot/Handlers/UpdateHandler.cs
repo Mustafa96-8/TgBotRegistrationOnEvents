@@ -572,10 +572,11 @@ public class UpdateHandler : IUpdateHandler
     private async Task AdminGetUsersNotification(UserProfile userProfile, Event myEvent, string messageText, CancellationToken cancellationToken)
     {
         var admins = await adminProfileService.GetAll(cancellationToken,u=>u.NotificationList.Contains(myEvent));
+        int usersCount = (await userProfileService.GetAllByEvent(myEvent, cancellationToken)).Count();
         Message message = new Message();
         foreach (var admin in admins)
         {
-            message = await bot.SendMessage(admin.Id, messageText + GetUserProfileInfo(userProfile), replyMarkup: new ReplyKeyboardRemove());
+            message = await bot.SendMessage(admin.Id, messageText +" "+ GetUserProfileInfo(userProfile) + "\n" + Messages.Admin.CountOfRegisteredUsersOnEvent + usersCount, replyMarkup: new ReplyKeyboardRemove());
             logger.LogInformation("The Admin message was sent with id: {SentMessageId}", message?.MessageId);
         }
         return;
