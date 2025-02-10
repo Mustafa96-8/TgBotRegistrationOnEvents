@@ -31,10 +31,7 @@ public class AdminProfile : Person
 
     public void SetAdminState(AdminStates state)
     {
-        if (AdminState != AdminStates.completed)
-        {
-            AdminState = state;
-        }
+        AdminState = state;
     }
 
 

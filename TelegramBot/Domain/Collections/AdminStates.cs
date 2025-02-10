@@ -8,6 +8,7 @@ public enum AdminStates
     awaiting_eventDateTime = 3,
     awaiting_eventDescription =4,
     get_event_info=11,
+    awaiting_newAdminId = 12,
 
 }
 

@@ -24,7 +24,8 @@ public static class Messages
     {
         public static string NewUserRegistered => "Новый пользователь зарегестрировался: ";
         public static string UserUnregrisered => "Пользователь отменил регистрацию: ";
-
+        public static string PrintNewAdminId => "Введите Telegram id нового администратора:";
+        public static string NewAdminAdded => "Новый администратор добавлен";
         public static string PrintEventName => "Введите название мероприятия:";
         public static string PrintEventDateTime => "Введите дату и время мероприятия (DD.MM.YYYY HH:MM):";
         public static string WrongDateTimeFormat => "Введите дату и время мероприятия (DD.MM.YYYY HH:MM):";

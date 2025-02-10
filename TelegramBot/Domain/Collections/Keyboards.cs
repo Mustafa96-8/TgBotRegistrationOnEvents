@@ -119,7 +119,10 @@ namespace TelegramBot.Domain.Collections
             {
                 InlineKeyboardButton.WithCallbackData(text: "Создать новое мероприятие", callbackData: "/createEvent"),
                 InlineKeyboardButton.WithCallbackData(text: "Удалить мероприятие", callbackData: "/deleteEvent"),
-            }
+            }, 
+            new []
+            {
+                InlineKeyboardButton.WithCallbackData(text: "Добавить администратора", callbackData: "/addAdmin"),            }
         });
             return inlineKeyboard;
         }

@@ -12,6 +12,7 @@ using TelegramBot.Contracts;
 using TelegramBot.Helpers;
 using TelegramBot.Services;
 using Microsoft.VisualBasic;
+using System.Threading;
 
 namespace TelegramBot.Handlers;
 
@@ -110,6 +111,7 @@ public class UpdateHandler : IUpdateHandler
             Message sentMessage = await (messageText.Split(' ')[0] switch
             {
                 "/admin" => GetAdminPanel(msg, Admin, cancellationToken),
+                "/addAdmin"=>HandleAdminCreateNewAdmin(msg, Admin, cancellationToken),
                 "/menu"=>GetAdminPanel(msg, Admin, cancellationToken),
                 "/getEventDebug" => HandleGetEvent(msg, Admin, cancellationToken),
                 "/deleteDebug" => DeleteProfileDebug(msg, Admin, cancellationToken),
@@ -124,9 +126,8 @@ public class UpdateHandler : IUpdateHandler
             {
                 Message sentMessage = await (messageText.Split(' ')[0] switch
                 {
-                    "//getAdmin" => SetAdminRole(msg,User,cancellationToken),
-                    "/deleteDebug" => DeleteProfileDebug(msg, User, cancellationToken),
                     "/getEvent" => HandleGetEvent(msg, User, cancellationToken),
+                    "/getAdminRole" => SetAdminRole(msg.Chat.Id, User, cancellationToken),
                     _ => HandleUserInput(msg, User, cancellationToken)
                 });
                 logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage?.MessageId);
@@ -135,8 +136,9 @@ public class UpdateHandler : IUpdateHandler
             {
                 Message sentMessage = await (messageText.Split(' ')[0] switch
                 {
-                    "//getAdmin" => SetAdminRole(msg, User, cancellationToken),
+
                     "/start" => StartRegistration(msg, User, cancellationToken),
+                    "/getAdminRole" => SetAdminRole(msg.Chat.Id, User,cancellationToken),
                     "/deleteDebug" => DeleteProfileDebug(msg, User, cancellationToken),
                     _ => HandleUserInput(msg, User, cancellationToken)
                 });
@@ -212,6 +214,7 @@ public class UpdateHandler : IUpdateHandler
                 AdminProfile Admin = (AdminProfile)person;
                 sentMessage = await (callbackQuery.Data switch
                 {
+                    "/addAdmin" => HandleAdminCreateNewAdmin(msg, Admin, cancellationToken),
                     "/getMenu" => GetAdminPanel(msg, Admin, cancellationToken),
                     "/getUsers" => HandleAdminGetAllRegistratedUsers(msg, Admin, cancellationToken),
                     "/switchNotification" => HandleSwitchNotificationNewUsers(msg, Admin, cancellationToken),
@@ -536,6 +539,34 @@ public class UpdateHandler : IUpdateHandler
         return await EditOrSendMessage(msg, adminProfile, listAllUsers ??= "Пользователей не найдено", GetAdminKeyboard(), cancellationToken: cancellationToken);
     }
 
+    private async Task<Message> HandleAdminCreateNewAdmin(Message msg,AdminProfile adminProfile,CancellationToken cancellationToken)
+    {
+        var chatId = msg?.Chat?.Id;
+        var events = await eventService.GetAll(cancellationToken);
+        adminProfile.SetAdminState(AdminStates.awaiting_newAdminId);
+        logger.LogInformation(await adminProfileService.Update(adminProfile, cancellationToken));
+        return await EditOrSendMessage(msg, adminProfile, Messages.Admin.PrintNewAdminId, null, cancellationToken);
+    }
+
+    private async Task<Message> AdminCreateNewAdmin(Message msg,AdminProfile adminProfile, CancellationToken cancellationToken)
+    {
+        long newAdminId;
+        if (long.TryParse(msg.Text.Split(' ')[0],out newAdminId))
+        {
+            UserProfile? user = await userProfileService.Get(newAdminId, cancellationToken);
+            if (user != null) 
+            {
+                await userProfileService.Delete(user,cancellationToken);                
+            }
+            AdminProfile newAdmin = new(newAdminId); 
+            adminProfile.SetAdminState(AdminStates.completed);
+            await Task.WhenAll(
+                adminProfileService.Create(newAdmin, cancellationToken),
+                adminProfileService.Update(adminProfile,cancellationToken));
+        }
+        return await EditOrSendMessage(msg, adminProfile, Messages.Admin.NewAdminAdded, GetAdminKeyboard(), cancellationToken);
+    }
+
 
     private async Task AdminGetUsersNotification(UserProfile userProfile, Event myEvent, string messageText, CancellationToken cancellationToken)
     {
@@ -558,6 +589,7 @@ public class UpdateHandler : IUpdateHandler
             AdminStates.awaiting_eventName => HandleEventName(msg, adminProfile, cancellationToken),
             AdminStates.awaiting_eventDateTime => HandleEventDate(msg, adminProfile, cancellationToken),
             AdminStates.awaiting_eventDescription => HandleEventDescription(msg, adminProfile, cancellationToken),
+            AdminStates.awaiting_newAdminId => AdminCreateNewAdmin(msg, adminProfile, cancellationToken),
             _ => GetAdminPanel(msg, adminProfile, cancellationToken),
         });
     }
@@ -710,7 +742,7 @@ public class UpdateHandler : IUpdateHandler
         logger.LogInformation(await adminProfileService.Delete(adminProfile, cancellationToken));
         return await bot.SendMessage(msg.Chat.Id, "Профиль удалён");
     }
-    private async Task<Message> SetAdminRole(Message msg,UserProfile userProfile,CancellationToken cancellationToken)
+    private async Task<Message> SetAdminRole(ChatId chatId,UserProfile userProfile,CancellationToken cancellationToken)
     {
         Person person = Person.Create(userProfile.Id);
         if (person.role == Roles.Admin)
@@ -718,10 +750,11 @@ public class UpdateHandler : IUpdateHandler
             logger.LogInformation(await userProfileService.Delete(userProfile, cancellationToken));
             AdminProfile Admin = (AdminProfile)person;
             logger.LogInformation(await adminProfileService.Create(Admin, cancellationToken));
-            return await bot.SendMessage(msg.Chat.Id, "Вам выдана роль администратора");
+            return await bot.SendMessage(chatId, "Вам выдана роль администратора");
         }
-        return await bot.SendMessage(msg.Chat.Id, "У вас нет прав на использование этой команды ");
+        return await bot.SendMessage(chatId, "У вас нет прав на использование этой команды ");
     }
+
 
     #endregion
 
