@@ -428,7 +428,7 @@ public class UpdateHandler : IUpdateHandler
     {
 
         // Проверка, является ли сообщение с профилем последним в переписке
-        if (person.LastProfileMessageId.HasValue)
+        if (person.LastProfileMessageId.HasValue && person.LastProfileMessageId==msg.Id)
         {
             try
             {
