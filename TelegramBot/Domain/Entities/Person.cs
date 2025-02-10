@@ -41,8 +41,9 @@ public class Person
 
     private static List<string> LoadFileEnvironment(string filePath)
     {
-        if (!File.Exists("data/"+filePath))
-            throw new FileNotFoundException($"The file '{filePath}' does not exist.");
+        if (!File.Exists("data/" + filePath))
+            return new List<string>();
+            //throw new FileNotFoundException($"The file '{filePath}' does not exist.");
 
         List<string> adminIdList = new();
         foreach (var line in File.ReadAllLines(filePath))

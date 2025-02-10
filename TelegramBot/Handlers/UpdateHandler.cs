@@ -133,6 +133,7 @@ public class UpdateHandler : IUpdateHandler
             {
                 Message sentMessage = await (messageText.Split(' ')[0] switch
                 {
+                    "/start" => StartRegistration(msg, User, cancellationToken),
                     "/deleteDebug" => DeleteProfileDebug(msg, User, cancellationToken),
                     _ => HandleUserInput(msg, User, cancellationToken)
                 });
