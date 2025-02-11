@@ -146,7 +146,7 @@ public class AdminUpdateHandler
         if (i != 0)
         {
             //Message csvFileMessage = await CsvFileHelper<UserProfileResponse>.WriteFileToCsv(bot, msg.Chat.Id, users,myEvent.Name+DateTime.Now);
-            Message excelFileMessage = await ExcelFileHelper<UserProfileResponse>.WriteFileToExcel(bot, msg.Chat.Id, users, myEvent.Name + " " + DateTime.Now);
+            Message excelFileMessage = await sendInfoService.SendFile(msg.Chat.Id, users, myEvent.Name + " " + DateTime.Now);
             logger.LogInformation("The message with CSV file send with Id: {SentMessageId}", excelFileMessage?.Id);
         }
         return await sendInfoService.EditOrSendMessage(msg, adminProfile, listAllUsers ??= Messages.Admin.UsersNotFound, GetAdminKeyboard(), cancellationToken: cancellationToken);

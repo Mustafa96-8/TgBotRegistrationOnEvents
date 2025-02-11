@@ -9,6 +9,10 @@ using Telegram.Bot.Types;
 using TelegramBot.Domain.Entities;
 using Telegram.Bot;
 using TelegramBot.Handlers;
+using DocumentFormat.OpenXml.Spreadsheet;
+using static TelegramBot.Domain.Enums.Messages;
+using TelegramBot.Contracts;
+using TelegramBot.Helpers;
 
 namespace TelegramBot.Services;
 public class SendingService
@@ -37,8 +41,13 @@ public class SendingService
         // Сохраняем ID последнего сообщения с профилем
         person.LastProfileMessageId = sentMessage.MessageId;
         await personService.Update(person, cancellationToken);
-
         return sentMessage;
+    }
+
+    public async Task<Message> SendFile(long chatId, IEnumerable<User> listOfUsers, string fileName) 
+    {
+        Message message = await ExcelFileHelper<UserProfileResponse>.WriteFileToExcel(bot, chatId, listOfUsers, fileName);
+        return message;
     }
 
 
