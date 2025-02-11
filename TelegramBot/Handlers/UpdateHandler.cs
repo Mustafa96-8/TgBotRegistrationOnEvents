@@ -110,7 +110,7 @@ public class UpdateHandler : IUpdateHandler
             AdminProfile Admin = (AdminProfile)person;
             Message sentMessage = await (messageText.Split(' ')[0] switch
             {
-                "/admin" => GetAdminPanel(msg, Admin, cancellationToken),
+                Commands.Admin.GetAdminPanel => GetAdminPanel(msg, Admin, cancellationToken),
                 "/addAdmin"=>HandleAdminCreateNewAdmin(msg, Admin, cancellationToken),
                 "/menu"=>GetAdminPanel(msg, Admin, cancellationToken),
                 "/getEventDebug" => HandleGetEvent(msg, Admin, cancellationToken),
@@ -299,7 +299,7 @@ public class UpdateHandler : IUpdateHandler
 
             return await bot.SendMessage(msg.Chat.Id, Messages.AreYou18, parseMode: ParseMode.Html, replyMarkup: GetKeyBoardYesOrNo(), cancellationToken: cancellationToken);
         }
-        return await bot.SendMessage(msg.Chat.Id, "Вы уже зарегестрированы", ParseMode.Html, replyMarkup: new ReplyKeyboardRemove(), cancellationToken: cancellationToken);
+        return await bot.SendMessage(msg.Chat.Id, Messages.YouHaveAlreadyRegistered, ParseMode.Html, replyMarkup: new ReplyKeyboardRemove(), cancellationToken: cancellationToken);
     }
     private async Task<Message> HandleChekIsEighteen(Message msg, UserProfile userProfile, CancellationToken cancellationToken, string messageText = null)
     {
@@ -489,9 +489,9 @@ public class UpdateHandler : IUpdateHandler
         await adminProfileService.Update(adminProfile, cancellationToken);
         if (adminProfile.IsNotification(myEvent))
         {
-            return await EditOrSendMessage(msg, adminProfile, "Вы будете получать оповещения о новых пользователях", GetAdminKeyboard(), cancellationToken);
+            return await EditOrSendMessage(msg, adminProfile, Messages.Admin.YouWillReceiveNotifications, GetAdminKeyboard(), cancellationToken);
         }
-        return await EditOrSendMessage(msg, adminProfile, "Вы больше не будете получать оповещения о новых пользователях", GetAdminKeyboard(), cancellationToken);
+        return await EditOrSendMessage(msg, adminProfile, Messages.Admin.YouWillNotReceiveNotifications, GetAdminKeyboard(), cancellationToken);
     }
 
     private async Task<Message> HandleAdminDeleteEvent(Message msg, AdminProfile adminProfile, CancellationToken cancellationToken)
@@ -504,7 +504,7 @@ public class UpdateHandler : IUpdateHandler
     {
         Event deleteEvent = await eventService.Get(eventId, cancellationToken);
         logger.LogInformation(await eventService.Delete(deleteEvent, cancellationToken));
-        return await EditOrSendMessage(msg, admin, "Мероприятие удалено ", GetAdminKeyboard(), cancellationToken);
+        return await EditOrSendMessage(msg, admin, Messages.Event.EventWasDeleted, GetAdminKeyboard(), cancellationToken);
     }
 
 
@@ -520,7 +520,7 @@ public class UpdateHandler : IUpdateHandler
         Event? myEvent = await eventService.Get(eventId, cancellationToken);
         if (myEvent == null)
         {
-            return await EditOrSendMessage(msg, adminProfile, "Мероприятие не найдено", GetAdminKeyboard(), cancellationToken: cancellationToken);
+            return await EditOrSendMessage(msg, adminProfile, Messages.Event.EventNotFound, GetAdminKeyboard(), cancellationToken: cancellationToken);
         }
         var result = await userProfileService.GetAllByEvent(myEvent, cancellationToken);
         string? listAllUsers = null;
@@ -581,6 +581,18 @@ public class UpdateHandler : IUpdateHandler
         }
         return;
     }
+    private async Task<Message> SetAdminRole(ChatId chatId, UserProfile userProfile, CancellationToken cancellationToken)
+    {
+        Person person = Person.Create(userProfile.Id);
+        if (person.role == Roles.Admin)
+        {
+            logger.LogInformation(await userProfileService.Delete(userProfile, cancellationToken));
+            AdminProfile Admin = (AdminProfile)person;
+            logger.LogInformation(await adminProfileService.Create(Admin, cancellationToken));
+            return await bot.SendMessage(chatId, "Вам выдана роль администратора");
+        }
+        return await bot.SendMessage(chatId, "У вас нет прав на использование этой команды ");
+    }
 
     private async Task<Message> HandleAdminInput(Message msg, AdminProfile adminProfile, CancellationToken cancellationToken)
     {
@@ -598,7 +610,7 @@ public class UpdateHandler : IUpdateHandler
 
     private async Task<Message> GetAdminPanel(Message msg, AdminProfile adminProfile, CancellationToken cancellationToken)
     {
-        return await EditOrSendMessage(msg, adminProfile, "Admin menu", GetAdminKeyboard(), cancellationToken: cancellationToken);
+        return await EditOrSendMessage(msg, adminProfile, Messages.Admin.Menu, GetAdminKeyboard(), cancellationToken: cancellationToken);
     }
 
 
@@ -737,25 +749,14 @@ public class UpdateHandler : IUpdateHandler
     private async Task<Message> DeleteProfileDebug(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
     {
         logger.LogInformation(await userProfileService.Delete(userProfile, cancellationToken));
-        return await bot.SendMessage(msg.Chat.Id, "Профиль удалён");
+        return await bot.SendMessage(msg.Chat.Id, Messages.ProfileWasDeleted);
     }
     private async Task<Message> DeleteProfileDebug(Message msg, AdminProfile adminProfile, CancellationToken cancellationToken)
     {
         logger.LogInformation(await adminProfileService.Delete(adminProfile, cancellationToken));
-        return await bot.SendMessage(msg.Chat.Id, "Профиль удалён");
+        return await bot.SendMessage(msg.Chat.Id, Messages.ProfileWasDeleted);
     }
-    private async Task<Message> SetAdminRole(ChatId chatId,UserProfile userProfile,CancellationToken cancellationToken)
-    {
-        Person person = Person.Create(userProfile.Id);
-        if (person.role == Roles.Admin)
-        {
-            logger.LogInformation(await userProfileService.Delete(userProfile, cancellationToken));
-            AdminProfile Admin = (AdminProfile)person;
-            logger.LogInformation(await adminProfileService.Create(Admin, cancellationToken));
-            return await bot.SendMessage(chatId, "Вам выдана роль администратора");
-        }
-        return await bot.SendMessage(chatId, "У вас нет прав на использование этой команды ");
-    }
+
 
 
     #endregion

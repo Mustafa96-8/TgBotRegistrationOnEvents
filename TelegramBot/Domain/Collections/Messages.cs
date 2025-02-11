@@ -8,20 +8,27 @@ public static class Messages
     public static string ChangingPhoneNumber => "Номер телефона успешно изменён на";
     public static string WrongPhoneNumberFormat=>  "Неверный формат номера. (Например: +7 987 654 32 10):";
     public static string YouHaveRegisteredForTheEvent => "Вы зарегестрировались на мероприятие: ";
+    public static string YouHaveAlreadyRegistered => "Вы уже зарегестрированы";
     public static string AreYou18 => "Вам есть 18?";
     public static string RegistrationOnly18 => "Регистрация только для совершеннолетних пользователей";
     public static string GoRegistration => "Начните регистрацию /start:";
     public static string YouHasUnregistered => "Вы отменили регистрацию";
     public static string ErrorInRegistrOnEvent => "Ошибка во время регистрации на мероприятие";
+    public static string ProfileWasDeleted => "Ваш профиль удалён";
+
 
     public static class Event
     {
         public static string AllowedToRegistr => "Доступные для регистрации мероприятия";
+        public static string EventWasDeleted => "Мероприятие удалено ";
+        public static string EventNotFound => "Мероприятие не найдено";
+
         public static string YourEvents => "Ваши мероприятия";
     }
 
     public static class Admin
     {
+        public static string Menu => "Меню администратора";
         public static string NewUserRegistered => "Новый пользователь зарегестрировался: ";
         public static string UserUnregrisered => "Пользователь отменил регистрацию: ";
         public static string PrintNewAdminId => "Введите Telegram id нового администратора:";
@@ -34,5 +41,14 @@ public static class Messages
         public static string EventsuccessfullyCreated => "Мероприятие успешно создано";
         public static string YouAlreadyOperatingWithEvent => "Вы уже работаете с другим мероприятием (если это не так сообщите о этой ошибке)";
         public static string EventNotFound => "Мероприятие не найдено в базе данных, обратитесь к разработчику";
+        public static string YouWillReceiveNotifications => "Вы будете получать оповещения о новых пользователях";
+        public static string YouWillNotReceiveNotifications => "Вы больше не будете получать оповещения о новых пользователях";
+
+
+    }
+
+    public static class Contacts
+    {
+        public static string YouCanContactByTelegram => "Вы можете написать напрямую администратору для регистрации на мероприятие: ";
     }
 }
