@@ -102,7 +102,7 @@ public class UpdateHandler : IUpdateHandler
         if (person.role == Roles.Admin)
         {
             AdminProfile Admin = (AdminProfile)person;
-            AdminUpdateHandler adminUpdateHandler = new AdminUpdateHandler(adminProfileService,sendInfoService,userProfileService,logger);
+            AdminUpdateHandler adminUpdateHandler = new AdminUpdateHandler(adminProfileService,sendInfoService,userProfileService,eventService,logger);
             await adminUpdateHandler.OnMessage(msg,Admin,cancellationToken);
         }
         else
@@ -174,7 +174,7 @@ public class UpdateHandler : IUpdateHandler
                 if (person.role == Roles.Admin)
                 {
                     AdminProfile Admin = (AdminProfile)person;
-                    AdminUpdateHandler adminUpdateHandler = new AdminUpdateHandler(adminProfileService, sendInfoService, userProfileService, logger);
+                    AdminUpdateHandler adminUpdateHandler = new AdminUpdateHandler(adminProfileService, sendInfoService, userProfileService,eventService, logger);
                     await adminUpdateHandler.OnCallbackQuery(msg,Admin,command,eventId,cancellationToken);
                 }
                 else
@@ -193,7 +193,7 @@ public class UpdateHandler : IUpdateHandler
             if (person.role == Roles.Admin)
             {
                 AdminProfile Admin = (AdminProfile)person;
-                AdminUpdateHandler adminUpdateHandler = new AdminUpdateHandler(adminProfileService, sendInfoService, userProfileService, logger);
+                AdminUpdateHandler adminUpdateHandler = new AdminUpdateHandler(adminProfileService, sendInfoService, userProfileService,eventService,logger);
                 await adminUpdateHandler.OnCallbackQuery(msg,Admin,callbackQuery,cancellationToken);
             }
             else
