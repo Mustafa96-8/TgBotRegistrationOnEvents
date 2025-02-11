@@ -29,6 +29,7 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.AddScoped<UserProfileService>();
         services.AddScoped<AdminProfileService>();
         services.AddScoped<PersonService>();
+        services.AddScoped<SendingService>();
         services.AddScoped<EventService>();
         services.AddHttpClient("telegram_bot_client")
                 .AddTypedClient<ITelegramBotClient>((httpClient, sp) =>

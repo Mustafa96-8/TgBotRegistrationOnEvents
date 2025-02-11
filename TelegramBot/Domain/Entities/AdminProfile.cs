@@ -41,8 +41,9 @@ public class AdminProfile : Person
         CurrentEvent = null;
     }
 
-    public void ChangeNotification(Event _event)
+    public void ChangeNotification(Event? _event)
     {
+        if (_event ==null) {return; }
         if (IsNotification(_event))
         {
             NotificationList.Remove(_event);
@@ -51,8 +52,9 @@ public class AdminProfile : Person
         NotificationList.Add(_event);
     }
 
-    public bool IsNotification(Event _event) 
+    public bool IsNotification(Event? _event) 
     {
+        if (_event == null) { return false; }
         return NotificationList.Contains(_event); 
     }
 }

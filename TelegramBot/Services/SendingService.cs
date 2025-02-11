@@ -29,6 +29,17 @@ public class SendingService
     }
 
 #region Get Info
+    public async Task<Message> SendSimpleMessage(Message msg, string _text, InlineKeyboardMarkup _replyMarkup, CancellationToken cancellationToken)
+    {
+        return await bot.SendMessage(
+         chatId: msg.Chat.Id,
+         text: _text,
+         replyMarkup: _replyMarkup,
+         cancellationToken: cancellationToken
+        );
+
+    }
+
     public async Task<Message> SendMessage(Message msg, Person person, string _text, InlineKeyboardMarkup _replyMarkup, CancellationToken cancellationToken)
     {
         var sentMessage = await bot.SendMessage(
@@ -44,7 +55,7 @@ public class SendingService
         return sentMessage;
     }
 
-    public async Task<Message> SendFile(long chatId, IEnumerable<User> listOfUsers, string fileName) 
+    public async Task<Message> SendFile(long chatId, IEnumerable<UserProfileResponse> listOfUsers, string fileName) 
     {
         Message message = await ExcelFileHelper<UserProfileResponse>.WriteFileToExcel(bot, chatId, listOfUsers, fileName);
         return message;

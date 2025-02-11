@@ -16,9 +16,9 @@ using static TelegramBot.Helpers.GetInfoHelper;
 namespace TelegramBot.Handlers;
 public class AdminUpdateHandler
 {
-    private Message msg;
+    private Message? msg;
     private string? messageText;
-    private AdminProfile adminProfile;
+    private AdminProfile? adminProfile;
     private readonly ILogger<UpdateHandler> logger;
     private readonly AdminProfileService adminProfileService;
     private readonly UserProfileService userProfileService;
@@ -31,11 +31,13 @@ public class AdminUpdateHandler
         AdminProfileService adminProfileService,
         SendingService sendInfoService,
         UserProfileService userProfileService,
+        EventService eventService,
         ILogger<UpdateHandler> logger)
     {
         this.adminProfileService = adminProfileService;
         this.sendInfoService = sendInfoService;
         this.userProfileService = userProfileService;
+        this.eventService = eventService;
         this.logger = logger;
     }
 
@@ -43,7 +45,7 @@ public class AdminUpdateHandler
     {
         this.msg = msg;
         this.adminProfile = adminProfile;
-        messageText = msg.Text;
+        messageText = msg.Text??"";
         Message sentMessage = await (messageText.Split(' ')[0] switch
         {
             "/admin" => GetAdminPanel(cancellationToken),
@@ -60,19 +62,20 @@ public class AdminUpdateHandler
     {
         this.msg = msg;
         this.adminProfile = adminProfile;
-        messageText = msg.Text;
+        messageText = msg.Text??"";
         Message sentMessage = await (command switch
         {
             'a' => AdminGetAllRegistratedUsers(eventId, cancellationToken),
             's' => SwitchNotificationNewUsers(eventId, cancellationToken),
-            'd' => AdminDeleteEvent(eventId, cancellationToken)
+            'd' => AdminDeleteEvent(eventId, cancellationToken),
+            _ => GetAdminPanel(cancellationToken)
         });
         logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage?.MessageId);
 
     }
     public async Task OnCallbackQuery(Message msg, AdminProfile adminProfile, CallbackQuery callbackQuery,CancellationToken cancellationToken)
     {
-        this.msg = callbackQuery.Message;
+        this.msg = msg;
         this.adminProfile = adminProfile;
         messageText = msg.Text;
         Message sentMessage = await (callbackQuery.Data switch
@@ -96,7 +99,7 @@ public class AdminUpdateHandler
     }
     private async Task<Message> SwitchNotificationNewUsers(Guid eventId, CancellationToken cancellationToken)
     {
-        Event myEvent = await eventService.Get(eventId, cancellationToken);
+        Event? myEvent = await eventService.Get(eventId, cancellationToken);
         adminProfile.ChangeNotification(myEvent);
         await adminProfileService.Update(adminProfile, cancellationToken);
         if (adminProfile.IsNotification(myEvent))
@@ -203,14 +206,14 @@ public class AdminUpdateHandler
     {
         if (adminProfile.CurrentEvent != null)
         {
-            return await sendInfoService.SendMessage(msg.Chat.Id, Messages.Admin.YouAlreadyOperatingWithEvent, parseMode: ParseMode.Html, replyMarkup: GetAdminKeyboard(), cancellationToken: cancellationToken);
+            return await sendInfoService.EditOrSendMessage(msg, adminProfile, Messages.Admin.YouAlreadyOperatingWithEvent,GetAdminKeyboard(), cancellationToken: cancellationToken);
         }
         Event newEvent = new();
         await eventService.Create(newEvent, cancellationToken);
         adminProfile.SetCurrentEvent(newEvent.Id);
         await adminProfileService.Update(adminProfile, cancellationToken);
 
-        return await sendInfoService.EditOrSendMessage(msg, adminProfile, Messages.Admin.PrintEventName, null, cancellationToken);
+        return await sendInfoService.EditOrSendMessage(msg, adminProfile, Messages.Admin.PrintEventName, GetAdminKeyboard(), cancellationToken);
     }
 
 
@@ -218,7 +221,7 @@ public class AdminUpdateHandler
     {
         if (adminProfile.CurrentEvent == null || string.IsNullOrEmpty(msg.Text))
         {
-            return await sendInfoService.SendMessage(msg,adminProfile, Messages.SomethingWentWrong, , replyMarkup: GetAdminKeyboard(), cancellationToken: cancellationToken);
+            return await sendInfoService.SendMessage(msg ,adminProfile ,Messages.SomethingWentWrong, GetAdminKeyboard(), cancellationToken);
         }
 
         Event newEvent = await eventService.Get(adminProfile.CurrentEvent, cancellationToken);
@@ -226,7 +229,7 @@ public class AdminUpdateHandler
         {
             adminProfile.ResetCurrentEvent();
             await adminProfileService.Update(adminProfile, cancellationToken);
-            return await sendInfoService.SendMessage(msg.Chat.Id, Messages.Admin.EventNotFound, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove(), cancellationToken: cancellationToken);
+            return await sendInfoService.SendMessage(msg ,adminProfile ,Messages.Admin.EventNotFound,GetAdminKeyboard(), cancellationToken);
         }
         newEvent.Name = msg.Text;
         adminProfile.SetAdminState(AdminStates.awaiting_eventDateTime);
@@ -234,7 +237,7 @@ public class AdminUpdateHandler
             adminProfileService.Update(adminProfile, cancellationToken),
             eventService.Update(newEvent, cancellationToken)
             );
-        return await sendInfoService.SendMessage(msg.Chat.Id, Messages.Admin.PrintEventDateTime, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove(), cancellationToken: cancellationToken);
+        return await sendInfoService.SendMessage(msg,adminProfile, Messages.Admin.PrintEventDateTime, null, cancellationToken);
     }
 
 
@@ -242,7 +245,7 @@ public class AdminUpdateHandler
     {
         if (adminProfile.CurrentEvent == null || string.IsNullOrEmpty(msg.Text))
         {
-            return await sendInfoService.SendMessage(msg.Chat.Id, Messages.SomethingWentWrong, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove(), cancellationToken: cancellationToken);
+            return await sendInfoService.SendMessage(msg, adminProfile,Messages.SomethingWentWrong, null, cancellationToken: cancellationToken);
         }
 
         Event newEvent = await eventService.Get(adminProfile.CurrentEvent, cancellationToken);
@@ -250,12 +253,12 @@ public class AdminUpdateHandler
         {
             adminProfile.ResetCurrentEvent();
             await adminProfileService.Update(adminProfile, cancellationToken);
-            return await sendInfoService.SendMessage(msg.Chat.Id, Messages.Admin.EventNotFound, parseMode: ParseMode.Html, replyMarkup: GetAdminKeyboard(), cancellationToken: cancellationToken);
+            return await sendInfoService.SendMessage(msg,adminProfile, Messages.Admin.EventNotFound,GetAdminKeyboard(), cancellationToken: cancellationToken);
         }
 
         if (!newEvent.SetDate(msg.Text))
         {
-            return await sendInfoService.SendMessage(msg.Chat.Id, Messages.Admin.WrongDateTimeFormat, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove(), cancellationToken: cancellationToken);
+            return await sendInfoService.SendMessage(msg,adminProfile, Messages.Admin.WrongDateTimeFormat,null, cancellationToken);
         }
 
         adminProfile.SetAdminState(AdminStates.awaiting_eventDescription);
@@ -263,13 +266,13 @@ public class AdminUpdateHandler
             adminProfileService.Update(adminProfile, cancellationToken),
             eventService.Update(newEvent, cancellationToken)
             );
-        return await sendInfoService.SendMessage(msg.Chat.Id, Messages.Admin.PrintEventDescription, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove(), cancellationToken: cancellationToken);
+        return await sendInfoService.SendMessage(msg,adminProfile, Messages.Admin.PrintEventDescription,null,cancellationToken);
     }
     private async Task<Message> HandleEventDescription(CancellationToken cancellationToken)
     {
         if (adminProfile.CurrentEvent == null || string.IsNullOrEmpty(msg.Text))
         {
-            return await sendInfoService.SendMessage(msg.Chat.Id, Messages.SomethingWentWrong, parseMode: ParseMode.Html, replyMarkup: GetAdminKeyboard(), cancellationToken: cancellationToken);
+            return await sendInfoService.SendMessage(msg,adminProfile, Messages.SomethingWentWrong, GetAdminKeyboard(), cancellationToken);
         }
 
         Event newEvent = await eventService.Get(adminProfile.CurrentEvent, cancellationToken);
@@ -277,7 +280,7 @@ public class AdminUpdateHandler
         {
             adminProfile.ResetCurrentEvent();
             await adminProfileService.Update(adminProfile, cancellationToken);
-            return await sendInfoService.SendMessage(msg.Chat.Id, Messages.Admin.EventNotFound, parseMode: ParseMode.Html, replyMarkup: GetAdminKeyboard(), cancellationToken: cancellationToken);
+            return await sendInfoService.SendMessage(msg,adminProfile, Messages.Admin.EventNotFound, GetAdminKeyboard(),cancellationToken);
         }
         newEvent.Description = msg.Text;
         adminProfile.ResetCurrentEvent();
@@ -292,14 +295,13 @@ public class AdminUpdateHandler
 
     private async Task<Message> HandleGetEvent(CancellationToken cancellationToken)
     {
-        var chatId = msg?.Chat?.Id;
         var events = await eventService.GetAll(cancellationToken);
-        return await sendInfoService.SendMessage(msg, GetEventsString(events),);
+        return await sendInfoService.SendMessage(msg,adminProfile, GetEventsString(events),GetAdminKeyboard(),cancellationToken);
     }
     #endregion
     private async Task<Message> DeleteProfileDebug(CancellationToken cancellationToken)
     {
         logger.LogInformation(await adminProfileService.Delete(adminProfile, cancellationToken));
-        return await sendInfoService.SendMessage(msg.Chat.Id, Messages.ProfileWasDeleted);
+        return await sendInfoService.SendSimpleMessage(msg, Messages.ProfileWasDeleted,null,cancellationToken);
     }
 }
