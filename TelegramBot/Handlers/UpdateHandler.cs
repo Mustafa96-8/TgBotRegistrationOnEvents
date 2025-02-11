@@ -11,8 +11,6 @@ using TelegramBot.Domain.Collections;
 using TelegramBot.Contracts;
 using TelegramBot.Helpers;
 using TelegramBot.Services;
-using Microsoft.VisualBasic;
-using System.Threading;
 
 namespace TelegramBot.Handlers;
 
@@ -28,9 +26,6 @@ public class UpdateHandler : IUpdateHandler
     private readonly AdminProfileService adminProfileService;
     private readonly PersonService personService;
     private readonly EventService eventService;
-
-
-
 
     public UpdateHandler(
         ITelegramBotClient bot,
@@ -63,7 +58,6 @@ public class UpdateHandler : IUpdateHandler
             await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
     }
 
-
     #region Message input Handlers
     /// <summary>
     /// Обработчик нового события от пользователя.
@@ -82,10 +76,6 @@ public class UpdateHandler : IUpdateHandler
             { Message: { } message } => OnMessage(message, cancellationToken),
             { EditedMessage: { } message } => OnMessage(message, cancellationToken),
             { CallbackQuery: { } callbackQuery } => OnCallbackQuery(callbackQuery, cancellationToken),
-            { InlineQuery: { } inlineQuery } => OnInlineQuery(inlineQuery),
-            { ChosenInlineResult: { } chosenInlineResult } => OnChosenInlineResult(chosenInlineResult),
-            { Poll: { } poll } => OnPoll(poll),
-            { PollAnswer: { } pollAnswer } => OnPollAnswer(pollAnswer),
             _ => UnknownUpdateHandlerAsync(update)
         });
     }
@@ -110,7 +100,7 @@ public class UpdateHandler : IUpdateHandler
             AdminProfile Admin = (AdminProfile)person;
             Message sentMessage = await (messageText.Split(' ')[0] switch
             {
-                Commands.Admin.GetAdminPanel => GetAdminPanel(msg, Admin, cancellationToken),
+                "/admin" => GetAdminPanel(msg, Admin, cancellationToken),
                 "/addAdmin"=>HandleAdminCreateNewAdmin(msg, Admin, cancellationToken),
                 "/menu"=>GetAdminPanel(msg, Admin, cancellationToken),
                 "/getEventDebug" => HandleGetEvent(msg, Admin, cancellationToken),
@@ -161,7 +151,6 @@ public class UpdateHandler : IUpdateHandler
     }
 
     #endregion
-
 
     #region Обработка Нажатий кнопок
 
@@ -250,13 +239,12 @@ public class UpdateHandler : IUpdateHandler
 
     #endregion
 
-
     #region работа с данными пользователя
     private async Task<Message> HandleGetUserMenu(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
     {
         if (userProfile.IsRegistered)
         {
-            return await EditOrSendMessage(msg, userProfile, "Меню", GetUserMenuKeyboard(), cancellationToken);
+            return await EditOrSendMessage(msg, userProfile, Messages.Menu, GetUserMenuKeyboard(), cancellationToken);
         }
         return await EditOrSendMessage(msg, userProfile, Messages.RegistrationOnly18, null, cancellationToken);
 
@@ -301,6 +289,7 @@ public class UpdateHandler : IUpdateHandler
         }
         return await bot.SendMessage(msg.Chat.Id, Messages.YouHaveAlreadyRegistered, ParseMode.Html, replyMarkup: new ReplyKeyboardRemove(), cancellationToken: cancellationToken);
     }
+
     private async Task<Message> HandleChekIsEighteen(Message msg, UserProfile userProfile, CancellationToken cancellationToken, string messageText = null)
     {
         messageText ??= msg.Text;
@@ -343,10 +332,8 @@ public class UpdateHandler : IUpdateHandler
                 await userProfileService.Update(userProfile, cancellationToken);
                 return await HandleGetEvent(msg, userProfile, cancellationToken);
             }
-
         }
         return await bot.SendMessage(chatId, Messages.WrongPhoneNumberFormat, replyMarkup: GetKeyBoardInRegistration());
-
     }
 
     private async Task<Message> HandleGetEvent(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
@@ -399,8 +386,6 @@ public class UpdateHandler : IUpdateHandler
         var events = await eventService.GetAll(cancellationToken, u => u.UserProfiles.Contains(userProfile));
         return await EditOrSendMessage(msg, userProfile, GetEventsString(events, Messages.Event.YourEvents), GetUserMenuInEventsKeyboard(), cancellationToken);
     }
-
-
     #endregion
 
     #region Get Info
@@ -537,7 +522,7 @@ public class UpdateHandler : IUpdateHandler
             Message excelFileMessage = await ExcelFileHelper<UserProfileResponse>.WriteFileToExcel(bot, msg.Chat.Id, users,myEvent.Name+" "+DateTime.Now);
             logger.LogInformation("The message with CSV file send with Id: {SentMessageId}", excelFileMessage?.Id);
         }
-        return await EditOrSendMessage(msg, adminProfile, listAllUsers ??= "Пользователей не найдено", GetAdminKeyboard(), cancellationToken: cancellationToken);
+        return await EditOrSendMessage(msg, adminProfile, listAllUsers ??= Messages.Admin.UsersNotFound, GetAdminKeyboard(), cancellationToken: cancellationToken);
     }
 
     private async Task<Message> HandleAdminCreateNewAdmin(Message msg,AdminProfile adminProfile,CancellationToken cancellationToken)
@@ -589,9 +574,9 @@ public class UpdateHandler : IUpdateHandler
             logger.LogInformation(await userProfileService.Delete(userProfile, cancellationToken));
             AdminProfile Admin = (AdminProfile)person;
             logger.LogInformation(await adminProfileService.Create(Admin, cancellationToken));
-            return await bot.SendMessage(chatId, "Вам выдана роль администратора");
+            return await bot.SendMessage(chatId, Messages.Admin.YouHaveBeenAssignedTheAdminRole);
         }
-        return await bot.SendMessage(chatId, "У вас нет прав на использование этой команды ");
+        return await bot.SendMessage(chatId, Messages.YouHaveNoPermissionsToUseThisCommand);
     }
 
     private async Task<Message> HandleAdminInput(Message msg, AdminProfile adminProfile, CancellationToken cancellationToken)
@@ -717,34 +702,7 @@ public class UpdateHandler : IUpdateHandler
         return await bot.SendMessage(chatId, GetEventsString(events), replyMarkup: new ReplyKeyboardRemove());
     }
     #endregion
-
-    #region Неиспользуемые методы
-
-    private async Task UnknownUpdateHandlerAsync(Update update)
-    {
-        logger.LogInformation("Unknown update type: {Update}", update.Type);
-
-    }
-    private async Task OnPoll(Poll poll)
-    {
-        logger.LogInformation("Poll received");
-    }
-    private async Task OnPollAnswer(PollAnswer pollAnswer)
-    {
-        logger.LogInformation("Poll answer received");
-    }
-
-    private async Task OnInlineQuery(InlineQuery inlineQuery)
-    {
-        logger.LogInformation("Inline query received");
-    }
-
-    private async Task OnChosenInlineResult(ChosenInlineResult chosenInlineResult)
-    {
-        logger.LogInformation("Chosen inline result received");
-    }
-    #endregion
-
+  
     #region Debug Operations
     private async Task<Message> DeleteProfileDebug(Message msg, UserProfile userProfile, CancellationToken cancellationToken)
     {
@@ -758,6 +716,16 @@ public class UpdateHandler : IUpdateHandler
     }
 
 
+
+    #endregion
+
+    #region Неиспользуемые методы
+
+    private async Task UnknownUpdateHandlerAsync(Update update)
+    {
+        logger.LogInformation("Unknown update type: {Update}", update.Type);
+        return;
+    }
 
     #endregion
 

@@ -15,6 +15,8 @@ public static class Messages
     public static string YouHasUnregistered => "Вы отменили регистрацию";
     public static string ErrorInRegistrOnEvent => "Ошибка во время регистрации на мероприятие";
     public static string ProfileWasDeleted => "Ваш профиль удалён";
+    public static string Menu => "Меню";
+    public static string YouHaveNoPermissionsToUseThisCommand => "У вас нет прав на использование этой команды ";
 
 
     public static class Event
@@ -43,7 +45,8 @@ public static class Messages
         public static string EventNotFound => "Мероприятие не найдено в базе данных, обратитесь к разработчику";
         public static string YouWillReceiveNotifications => "Вы будете получать оповещения о новых пользователях";
         public static string YouWillNotReceiveNotifications => "Вы больше не будете получать оповещения о новых пользователях";
-
+        public static string UsersNotFound => "Пользователей не найдено";
+        public static string YouHaveBeenAssignedTheAdminRole => "Вам выдана роль администратора";
 
     }
 
