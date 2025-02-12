@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TelegramBot.Domain.Collections;
 using TelegramBot.Domain.Entities;
 
 namespace TelegramBot.Helpers;
@@ -13,10 +14,10 @@ public static class GetInfoHelper
         return $"Имя: {profile.Name}\n" +
                $"Телефон: {profile.PhoneNumber}\n";
     }
-    public static string GetEventsString(IEnumerable<Event> events, string message = "Мероприятия")
+    public static string GetEventsString(IEnumerable<Event> events,string message = "Мероприятия",int page = 0)
     {
         string eventString = message + ":\n";
-        int i = 0;
+        int i = ApplicationConstants.numberOfObjectsPerPage*page;
         foreach (var x in events)
         {
             i++;

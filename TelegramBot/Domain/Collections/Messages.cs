@@ -1,7 +1,10 @@
-﻿namespace TelegramBot.Domain.Enums;
+﻿using TelegramBot.Domain.Collections;
+
+namespace TelegramBot.Domain.Enums;
 
 public static class Messages
 {
+
     public static string SomethingWentWrong => "Что-то пошло не так. Попробуйте снова.";
     public static string PrintYouName => "Введите ваше имя:";
     public static string PrintPhoneNumber => "Введите ваш номер телефона.(Например: +7 987 654 32 10):";
@@ -52,6 +55,7 @@ public static class Messages
 
     public static class Contacts
     {
-        public static string YouCanContactByTelegram => "Вы можете написать напрямую администратору для регистрации на мероприятие: ";
+        public static string GetDeveloperContact => "Если возникли проблемы с ботом, пожалуйста обратитесь: " + ApplicationConstants.DeveloperContact;
+        public static string GetSommelierContact => "Вы можете написать напрямую сомелье для регистрации на мероприятие: " + ApplicationConstants.AdministrationContact;
     }
 }

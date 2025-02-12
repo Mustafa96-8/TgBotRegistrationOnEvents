@@ -11,26 +11,42 @@ namespace TelegramBot.Domain.Collections
     public static class Keyboards
     {
 
-        /// <summary>
-        /// Инициализация кнопок для главного меню бота.
-        /// </summary>
-        /// <returns><see langword="InlineKeyboardMarkup"/> - клавиатура для отображения в сообщении.</returns>
-
-        public static InlineKeyboardMarkup GetEventKeyboard(IEnumerable<Event> events, char operation)
+        public static InlineKeyboardMarkup GetEventKeyboard(IEnumerable<Event> events, string operation,int page=0,bool IsButtonsOn=true)
         {
             var inlineButtons = events
                 .Select(n => new[] { InlineKeyboardButton.WithCallbackData(text: n.Name + " " + n.Date.ToString(), callbackData: ":" + operation + n.Id) })
                 .ToArray();
 
+            InlineKeyboardButton[]? pageButtons = new[]{
+                getButtonPrev(operation, page),
+                getButtonNext(operation, page,events.Count())
+             };
             var backButton = new[]
             {
                 InlineKeyboardButton.WithCallbackData(text: "Назад", callbackData: "/getMenu")
             };
 
-            return new InlineKeyboardMarkup(inlineButtons.Append(backButton));
+
+            return new InlineKeyboardMarkup(inlineButtons.Append(pageButtons).Append(backButton));
         }
+        public static InlineKeyboardButton getButtonPrev(string operation,int page)
+        {
+            if (page != 0)
+            {
+                return InlineKeyboardButton.WithCallbackData(text: "<-", callbackData: string.Concat("<-", '|', operation, '|', page));
+            }
+            return InlineKeyboardButton.WithCallbackData(text: "-|-", callbackData: "/pass");
+        }
+        public static InlineKeyboardButton getButtonNext(string operation, int page,int eventCount)
+        {
+            if (eventCount < ApplicationConstants.numberOfObjectsPerPage) 
+                return InlineKeyboardButton.WithCallbackData(text: "-|-",callbackData: "/pass");
+            return InlineKeyboardButton.WithCallbackData(text: "->", callbackData: string.Concat("->", '|', operation, '|', page));
+        }
+
         public static InlineKeyboardMarkup GetUserMenuKeyboard()
         {
+
             InlineKeyboardMarkup inlineKeyboard = new(new[]
             {
             new []
@@ -48,9 +64,13 @@ namespace TelegramBot.Domain.Collections
             });
             return inlineKeyboard;
         }
-        public static InlineKeyboardMarkup GetUserMenuInEventsKeyboard()
+        public static InlineKeyboardMarkup GetUserMenuInEventsKeyboard(int eventsCount, string operation, int page)
         {
-            InlineKeyboardMarkup inlineKeyboard = new(new[]
+            InlineKeyboardButton[]? pageButtons = new[]{
+                getButtonPrev(operation, page),
+                getButtonNext(operation, page,eventsCount)
+            };
+            var inlineKeyboard = new[]
             {
             new []
             {
@@ -64,8 +84,8 @@ namespace TelegramBot.Domain.Collections
             {
                 InlineKeyboardButton.WithCallbackData(text: "Зарегестрироваться на мероприятие", callbackData: "/getEvent")
             }
-            });
-            return inlineKeyboard;
+            };
+            return new InlineKeyboardMarkup(inlineKeyboard.Append(pageButtons));
         }
         public static InlineKeyboardMarkup GetKeyBoardYesOrNo()
         {
@@ -125,17 +145,6 @@ namespace TelegramBot.Domain.Collections
                 InlineKeyboardButton.WithCallbackData(text: "Добавить администратора", callbackData: "/addAdmin"),            }
         });
             return inlineKeyboard;
-        }
-
-        public static InlineKeyboardMarkup GetToMenuKeyboard() {
-            InlineKeyboardMarkup inlineKeyboard = new(new[]
-            { 
-            new []
-            {
-                InlineKeyboardButton.WithCallbackData(text: "Назад", callbackData: "/getMenu")
-            }
-            });  
-        return inlineKeyboard;
         }
     }
 }
