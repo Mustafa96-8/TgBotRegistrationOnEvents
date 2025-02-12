@@ -16,7 +16,7 @@ public static class GetInfoHelper
     }
     public static string GetEventsString(IEnumerable<Event> events,string message = "Мероприятия",int page = 0)
     {
-        string eventString = message + ":\n";
+        string eventString ="Страница "+page+". "+ message + ":\n";
         int i = ApplicationConstants.numberOfObjectsPerPage*page;
         foreach (var x in events)
         {

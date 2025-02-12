@@ -243,7 +243,7 @@ public class UserUpdateHandler
         {
             return await sendInfoService.SendMessage(msg,userProfile, Messages.ErrorInRegistrOnEvent, GetUserMenuKeyboard(),cancellationToken);
         }
-        await AdminGetUsersNotification(myEvent, Messages.Admin.NewUserRegistered + " " + myEvent.ToString());
+        await AdminGetUsersNotification(myEvent, Messages.Admin.NewUserRegistered + "\n" + myEvent.ToString());
         return await sendInfoService.EditOrSendMessage(msg, userProfile, Messages.YouHaveRegisteredForTheEvent + "\n" + myEvent.ToString(), GetUserMenuKeyboard(), cancellationToken);
 
     }
@@ -258,7 +258,7 @@ public class UserUpdateHandler
         }
         await userProfileService.Unregister(userProfile,unregisterEvent, cancellationToken);
         
-        await AdminGetUsersNotification(unregisterEvent, Messages.Admin.UserUnregrisered + " " + unregisterEvent.ToString());
+        await AdminGetUsersNotification(unregisterEvent, Messages.Admin.UserUnregrisered + "\n" + unregisterEvent.ToString());
 
         return await sendInfoService.EditOrSendMessage(msg, userProfile, Messages.YouHasUnregistered + " " + unregisterEvent.ToString(), GetUserMenuKeyboard(), cancellationToken);
     }
@@ -274,7 +274,7 @@ public class UserUpdateHandler
         Message message = new Message();
         foreach (var admin in admins)
         {
-            message = await sendInfoService.SendMessage(msg,admin, messageText + "\n" + GetUserProfileInfo(userProfile) + "\n" + Messages.Admin.CountOfRegisteredUsersOnEvent + usersCount, null,cancellationToken);
+            message = await sendInfoService.SendMessage(msg,admin, messageText + "\n" + GetUserProfileInfo(userProfile) + "\n" + Messages.Admin.CountOfRegisteredUsersOnEvent+" " + usersCount, null,cancellationToken);
             logger.LogInformation("The Admin message was sent with id: {SentMessageId}", message?.MessageId);
         }
         return;

@@ -17,7 +17,7 @@ public class Event
 
     public override string ToString()
     {
-        return Name+" Дата:"+Date.ToString();
+        return Name+" Дата: "+Date.ToString();
     }
 
     public bool SetDate(string text)
