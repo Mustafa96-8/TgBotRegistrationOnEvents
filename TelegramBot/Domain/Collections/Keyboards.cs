@@ -134,16 +134,28 @@ namespace TelegramBot.Domain.Collections
             new []
             {
                 InlineKeyboardButton.WithCallbackData(text: "Получить список зарегестрированных", callbackData: "/getUsers"),
+            },
+            new []
+            {
+                InlineKeyboardButton.WithCallbackData(text: "Получить список мероприятий", callbackData: "/getevents"),
+            },
+            new []
+            {
                 InlineKeyboardButton.WithCallbackData(text: "Переключить оповещения о новых пользователях", callbackData: "/switchNotification"),
             },
             new []
             {
                 InlineKeyboardButton.WithCallbackData(text: "Создать новое мероприятие", callbackData: "/createEvent"),
-                InlineKeyboardButton.WithCallbackData(text: "Удалить мероприятие", callbackData: "/deleteEvent"),
-            }, 
+            },
             new []
             {
-                InlineKeyboardButton.WithCallbackData(text: "Добавить администратора", callbackData: "/addAdmin"),            }
+                InlineKeyboardButton.WithCallbackData(text: "Удалить мероприятие", callbackData: "/deleteEvent"),
+            },
+            new []
+            {
+                InlineKeyboardButton.WithCallbackData(text: "Добавить администратора", callbackData: "/addAdmin"),  
+                InlineKeyboardButton.WithCallbackData(text: "Удалить пользователя", callbackData: "/deleteperson"),  
+            }
         });
             return inlineKeyboard;
         }

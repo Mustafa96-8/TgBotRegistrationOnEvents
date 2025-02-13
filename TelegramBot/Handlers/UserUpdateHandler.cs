@@ -47,7 +47,8 @@ public class UserUpdateHandler
             Message sentMessage = await (messageText.Split(' ')[0] switch
             {
                 "/getevent" => PrintEventsOnPage("r"),
-                "/getAdminRole" => SetAdminRole(),
+                "/deleteprofile" => DeleteProfile(),
+                //"/getAdminRole" => SetAdminRole(),
                 _ => HandleUserInput()
             });
             logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage?.MessageId);
@@ -57,8 +58,7 @@ public class UserUpdateHandler
             Message sentMessage = await (messageText.Split(' ')[0] switch
             {
                 "/start" => StartRegistration(),
-                "/getAdminRole" => SetAdminRole(),
-                "/deleteDebug" => DeleteProfileDebug(),
+                //"/getAdminRole" => SetAdminRole(),
                 _ => HandleUserInput()
             });
 
@@ -89,7 +89,6 @@ public class UserUpdateHandler
         Message sentMessage = await (callbackQueryDataArgs[0] switch
         {
             "/pass" => PassFunc(),
-            "//delete" => DeleteProfileDebug(),
             "/getMenu" => HandleGetUserMenu(),
             "/getEvent" => PrintEventsOnPage("r"),
             "/getRegisterEvents" => PrintEventsOnPage("g"),
@@ -250,6 +249,16 @@ public class UserUpdateHandler
         return await sendInfoService.EditOrSendMessage(msg, userProfile, Messages.YouHasUnregistered + " " + unregisterEvent.ToString(), GetUserMenuKeyboard(), cancellationToken);
     }
 
+    private async Task<Message> DeleteProfile()
+    {
+        foreach(Event myEvent in userProfile.Events)
+        {
+            UnregisterUser(myEvent.Id);
+        }
+        logger.LogInformation(await userProfileService.Delete(userProfile, cancellationToken));
+        return await sendInfoService.SendSimpleMessage(msg, Messages.ProfileWasDeleted, null, cancellationToken);
+    }
+
     #endregion
 
     #region Admin panel
@@ -280,13 +289,9 @@ public class UserUpdateHandler
     }
     #endregion
 
-    #region Debug Operations
-    private async Task<Message> DeleteProfileDebug()
-    {
-        logger.LogInformation(await userProfileService.Delete(userProfile, cancellationToken));
-        return await sendInfoService.SendSimpleMessage(msg, Messages.ProfileWasDeleted,null,cancellationToken);
-    }
-    #endregion
+
+
+
 }
 
 

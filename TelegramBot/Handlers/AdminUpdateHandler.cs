@@ -48,9 +48,9 @@ public class AdminUpdateHandler
         {
             "/admin" => GetAdminPanel(),
             "/addAdmin" => HandleAdminCreateNewAdmin(),
+            "/deleteperson" => HandleAdminDeletePerson(),
             "/menu" => GetAdminPanel(),
-            "/getEventDebug" => HandleGetEvent(),
-            "/deleteDebug" => DeleteProfileDebug(),
+            "/getevents" => PrintEventsOnPage("g"),
             _ => HandleAdminInput()
         });
 
@@ -77,7 +77,7 @@ public class AdminUpdateHandler
         var callbackQueryDataArgs = (callbackQuery.Data ?? " ").Split('|');
         Message sentMessage = await (callbackQueryDataArgs[0] switch
         {
-            "/pass" => PassFunc(msg),
+            "/pass" => PassFunc(),
             "/addAdmin" => HandleAdminCreateNewAdmin(),
             "/deleteperson" => HandleAdminDeletePerson(),
             "/getMenu" => GetAdminPanel(),
@@ -94,7 +94,7 @@ public class AdminUpdateHandler
     }
 
 
-    private async Task<Message> PassFunc(Message msg)
+    private async Task<Message> PassFunc()
     {
         return msg;
     }
