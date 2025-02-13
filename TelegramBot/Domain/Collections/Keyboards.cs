@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Telegram.Bot.Types.ReplyMarkups;
+﻿using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBot.Domain.Entities;
 
 namespace TelegramBot.Domain.Collections
@@ -11,21 +6,27 @@ namespace TelegramBot.Domain.Collections
     public static class Keyboards
     {
 
-        public static InlineKeyboardMarkup GetEventKeyboard(IEnumerable<Event> events, string operation,int page=0,bool IsButtonsOn=true)
+        public static InlineKeyboardMarkup GetEventKeyboard(IEnumerable<Event> events, string operation, int page = 0, bool IsButtonsOn = true)
         {
-            var inlineButtons = events
-                .Select(n => new[] { InlineKeyboardButton.WithCallbackData(text: n.Name + " " + n.Date.ToString(), callbackData: ":" + operation + n.Id) })
-                .ToArray();
-
             InlineKeyboardButton[]? pageButtons = new[]{
                 getButtonPrev(operation, page),
                 getButtonNext(operation, page,events.Count())
              };
+
             var backButton = new[]
             {
                 InlineKeyboardButton.WithCallbackData(text: "Назад", callbackData: "/getMenu")
             };
 
+            if(operation == "g")
+            {
+                return new InlineKeyboardMarkup(new[] { pageButtons, backButton });
+            }
+
+            int i = page * ApplicationConstants.numberOfObjectsPerPage;
+            var inlineButtons = events
+             .Select(n => new[] {InlineKeyboardButton.WithCallbackData(text: "№"+ (i++).ToString()+" " + n.Name + " ", callbackData: ":" + operation + n.Id)})
+             .ToArray();
 
             return new InlineKeyboardMarkup(inlineButtons.Append(pageButtons).Append(backButton));
         }

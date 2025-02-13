@@ -50,6 +50,7 @@ public static class Messages
         public static string YouWillNotReceiveNotifications => "Вы больше не будете получать оповещения о новых пользователях";
         public static string UsersNotFound => "Пользователей не найдено";
         public static string YouHaveBeenAssignedTheAdminRole => "Вам выдана роль администратора";
+        public static string PersonWasDeleted => "Пользователь/Администратор удалён";
 
     }
 

@@ -1,14 +1,7 @@
-﻿using Telegram.Bot;
-using Telegram.Bot.Exceptions;
-using Telegram.Bot.Polling;
-using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
+﻿using Telegram.Bot.Types;
 using TelegramBot.Domain.Entities;
 using TelegramBot.Domain.Enums;
 using TelegramBot.Domain.Collections;
-using TelegramBot.Contracts;
-using TelegramBot.Helpers;
 using TelegramBot.Services;
 using static TelegramBot.Domain.Collections.Keyboards;
 using static TelegramBot.Helpers.GetInfoHelper;
@@ -44,7 +37,7 @@ public class UserUpdateHandler
         this.cancellationToken = cancellationToken;
     }
 
-    public async Task OnMessage(Message _msg, UserProfile _userProfile, CancellationToken cancellationToken)
+    public async Task OnMessage(Message _msg, UserProfile _userProfile)
     {
         msg = _msg;
         userProfile = _userProfile;
@@ -225,11 +218,6 @@ public class UserUpdateHandler
         return await sendInfoService.EditOrSendMessage(msg, userProfile, GetEventsString(events, Messages.Event.AllowedToRegistr,page), GetEventKeyboard(events, command,page), cancellationToken: cancellationToken);
 
     }
-    private async Task<Message> HandleGetEvent()
-    {
-        var events = await eventService.GetAll(cancellationToken, u => !u.UserProfiles.Contains(userProfile));
-        return await sendInfoService.EditOrSendMessage(msg, userProfile, GetEventsString(events, Messages.Event.AllowedToRegistr), GetEventKeyboard(events, "r"), cancellationToken: cancellationToken);
-    }
 
 
     private async Task<Message> ChooseEvent(Guid eventId)
@@ -244,10 +232,9 @@ public class UserUpdateHandler
             return await sendInfoService.SendMessage(msg,userProfile, Messages.ErrorInRegistrOnEvent, GetUserMenuKeyboard(),cancellationToken);
         }
         await AdminGetUsersNotification(myEvent, Messages.Admin.NewUserRegistered + "\n" + myEvent.ToString());
-        return await sendInfoService.EditOrSendMessage(msg, userProfile, Messages.YouHaveRegisteredForTheEvent + "\n" + myEvent.ToString(), GetUserMenuKeyboard(), cancellationToken);
+        return await sendInfoService.EditOrSendMessage(msg, userProfile, String.Concat(Messages.YouHaveRegisteredForTheEvent,"\n",myEvent.ToString(),"\n",myEvent.Description), GetUserMenuKeyboard(), cancellationToken);
 
     }
-
 
     private async Task<Message> UnregisterUser(Guid eventId)
     {

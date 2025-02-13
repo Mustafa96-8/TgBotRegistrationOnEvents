@@ -104,20 +104,17 @@ public class UpdateHandler : IUpdateHandler
         if (person.role == Roles.Admin)
         {
             AdminProfile Admin = (AdminProfile)person;
-            AdminUpdateHandler adminUpdateHandler = new AdminUpdateHandler(adminProfileService,sendInfoService,userProfileService,eventService,logger);
-            await adminUpdateHandler.OnMessage(msg,Admin,cancellationToken);
+            AdminUpdateHandler adminUpdateHandler = new AdminUpdateHandler(adminProfileService,sendInfoService,userProfileService,eventService,logger,cancellationToken);
+            await adminUpdateHandler.OnMessage(msg,Admin);
         }
         else
         {
             UserProfile User = (UserProfile)person;
             UserUpdateHandler userUpdateHandler = new UserUpdateHandler(userProfileService, sendInfoService, eventService,adminProfileService, logger,cancellationToken);
-            await userUpdateHandler.OnMessage(msg,User,cancellationToken);
+            await userUpdateHandler.OnMessage(msg,User);
             
         }
     }
-
-
-
     #endregion
 
     #region Обработка Нажатий кнопок
@@ -146,8 +143,8 @@ public class UpdateHandler : IUpdateHandler
                 if (person.role == Roles.Admin)
                 {
                     AdminProfile Admin = (AdminProfile)person;
-                    AdminUpdateHandler adminUpdateHandler = new AdminUpdateHandler(adminProfileService, sendInfoService, userProfileService, eventService, logger);
-                    await adminUpdateHandler.OnCallbackQuery(msg, Admin, command, eventId, cancellationToken);
+                    AdminUpdateHandler adminUpdateHandler = new AdminUpdateHandler(adminProfileService, sendInfoService, userProfileService, eventService, logger, cancellationToken);
+                    await adminUpdateHandler.OnCallbackQuery(msg, Admin, command, eventId);
                 }
                 else
                 {
@@ -162,8 +159,8 @@ public class UpdateHandler : IUpdateHandler
             if (person.role == Roles.Admin)
             {
                 AdminProfile Admin = (AdminProfile)person;
-                AdminUpdateHandler adminUpdateHandler = new AdminUpdateHandler(adminProfileService, sendInfoService, userProfileService, eventService, logger);
-                await adminUpdateHandler.OnCallbackQuery(msg, Admin, callbackQuery, cancellationToken);
+                AdminUpdateHandler adminUpdateHandler = new AdminUpdateHandler(adminProfileService, sendInfoService, userProfileService, eventService, logger, cancellationToken);
+                await adminUpdateHandler.OnCallbackQuery(msg, Admin, callbackQuery);
             }
             else
             {

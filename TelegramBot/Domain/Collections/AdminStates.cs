@@ -9,6 +9,7 @@ public enum AdminStates
     awaiting_eventDescription =4,
     get_event_info=11,
     awaiting_newAdminId = 12,
+    awaiting_deletePersonId = 22,
 
 }
 

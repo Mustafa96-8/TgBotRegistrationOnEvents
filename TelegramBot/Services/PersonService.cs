@@ -22,6 +22,17 @@ public class PersonService
         return person;
     }
 
+    public async Task<bool> Delete(Person person,CancellationToken ct)
+    {
+        unitOfWork.PersonRepository.Delete(person);
+        var result = await unitOfWork.Save(ct);
+        if(result == 0)
+        {
+            return false;
+        }
+        return true;
+    }
+
     public async Task<string> Update(Person person, CancellationToken ct)
     {
         var personFromDb = await unitOfWork.PersonRepository.GetByID(person.Id, ct);
