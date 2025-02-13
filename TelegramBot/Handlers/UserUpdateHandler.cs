@@ -5,6 +5,7 @@ using TelegramBot.Domain.Collections;
 using TelegramBot.Services;
 using static TelegramBot.Domain.Collections.Keyboards;
 using static TelegramBot.Helpers.GetInfoHelper;
+using TelegramBot.Helpers;
 
 namespace TelegramBot.Handlers;
 public class UserUpdateHandler
@@ -74,7 +75,8 @@ public class UserUpdateHandler
         Message sentMessage = await (command switch
         {
             'r' => ChooseEvent(eventId),
-            'u' => UnregisterUser(eventId)
+            'u' => UnregisterUser(eventId),
+            'g' => GetEventInfo(eventId)
         });
         userProfile.LastProfileMessageId = sentMessage.Id;
 
@@ -88,7 +90,6 @@ public class UserUpdateHandler
         var callbackQueryDataArgs = (callbackQuery.Data ?? " ").Split('|');
         Message sentMessage = await (callbackQueryDataArgs[0] switch
         {
-            "/pass" => PassFunc(),
             "/getMenu" => HandleGetUserMenu(),
             "/getEvent" => PrintEventsOnPage("r"),
             "/getRegisterEvents" => PrintEventsOnPage("g"),
@@ -115,10 +116,6 @@ public class UserUpdateHandler
             _ => HandleGetUserMenu()
         });
     }
-    private async Task<Message> PassFunc()
-    {
-        return msg;
-    }                             
 
     #region работа с данными пользователя
     private async Task<Message> HandleGetUserMenu()
@@ -205,19 +202,23 @@ public class UserUpdateHandler
         {
             events = await eventService.GetWithPagination(cancellationToken, page, u => !u.UserProfiles.Contains(userProfile));
         }
-        else if (command == "u"||command=="")
+        else if (command == "u"||command=="g")
         {
             events = await eventService.GetWithPagination(cancellationToken, page, u => u.UserProfiles.Contains(userProfile));
-        }
-        else if (command == "g") 
-        {
-            events = await eventService.GetWithPagination(cancellationToken,page, u => u.UserProfiles.Contains(userProfile));
-            return await sendInfoService.EditOrSendMessage(msg, userProfile, GetEventsString(events, Messages.Event.YourEvents,page), GetUserMenuInEventsKeyboard(events.Count(),command,page), cancellationToken);
         }
         return await sendInfoService.EditOrSendMessage(msg, userProfile, GetEventsString(events, Messages.Event.AllowedToRegistr,page), GetEventKeyboard(events, command,page), cancellationToken: cancellationToken);
 
     }
 
+    private async Task<Message> GetEventInfo(Guid eventId)
+    {
+        Event? myEvent = await eventService.Get(eventId, cancellationToken);
+        if(myEvent == null)
+        {
+            return await sendInfoService.EditOrSendMessage(msg, userProfile, Messages.SomethingWentWrong, GetUserMenuKeyboard(), cancellationToken);
+        }
+        return await sendInfoService.EditOrSendMessage(msg, userProfile, $"{myEvent.ToString()}\n{myEvent.GetDescription()}", GetUserMenuKeyboard(), cancellationToken);
+    }
 
     private async Task<Message> ChooseEvent(Guid eventId)
     {
@@ -231,7 +232,7 @@ public class UserUpdateHandler
             return await sendInfoService.SendMessage(userProfile, Messages.ErrorInRegistrOnEvent, GetUserMenuKeyboard(),cancellationToken);
         }
         await AdminGetUsersNotification(myEvent, Messages.Admin.NewUserRegistered + "\n" + myEvent.ToString());
-        return await sendInfoService.EditOrSendMessage(msg, userProfile, String.Concat(Messages.YouHaveRegisteredForTheEvent,"\n",myEvent.ToString(),"\n",myEvent.Description), GetUserMenuKeyboard(), cancellationToken);
+        return await sendInfoService.EditOrSendMessage(msg, userProfile, String.Concat(Messages.YouHaveRegisteredForTheEvent,"\n",myEvent.ToString(),"\n",myEvent.GetDescription()), GetUserMenuKeyboard(), cancellationToken);
 
     }
 
@@ -253,9 +254,9 @@ public class UserUpdateHandler
     {
         foreach(Event myEvent in userProfile.Events)
         {
-            UnregisterUser(myEvent.Id);
+            await userProfileService.Unregister(userProfile,myEvent,cancellationToken);
         }
-        logger.LogInformation(await userProfileService.Delete(userProfile, cancellationToken));
+        logger.LogInformation(await userProfileService.Delete(userProfile, cancellationToken)+" Deleted user");
         return await sendInfoService.SendSimpleMessage(msg, Messages.ProfileWasDeleted, null, cancellationToken);
     }
 
@@ -270,7 +271,7 @@ public class UserUpdateHandler
         Message message = new Message();
         foreach (var admin in admins)
         {
-            message = await sendInfoService.SendMessage(admin, messageText + "\n" + GetUserProfileInfo(userProfile) + "\n" + Messages.Admin.CountOfRegisteredUsersOnEvent+" " + usersCount, null,cancellationToken);
+            message = await sendInfoService.SendMessage(admin, $"{messageText} \n{GetUserProfileInfo(userProfile)} \n{Messages.Admin.CountOfRegisteredUsersOnEvent} - {usersCount}", null,cancellationToken);
             logger.LogInformation("The Admin message was sent with id: {SentMessageId}", message?.MessageId);
         }
         return;

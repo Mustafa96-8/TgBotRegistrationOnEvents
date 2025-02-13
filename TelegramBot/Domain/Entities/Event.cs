@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TelegramBot.Domain.Collections;
+using TelegramBot.Extensions;
 
 namespace TelegramBot.Domain.Entities;
 public class Event
@@ -15,11 +17,11 @@ public class Event
 
     public ICollection<UserProfile> UserProfiles { get; set; } = new List<UserProfile>();
 
+    public string GetDescription() => $"{Emoji.Page_Facing_Up} {Description} \n";
     public override string ToString()
     {
-        return Name+" Дата: "+Date.ToString();
-    }
-
+        return $"\n{Emoji.Wine_Glass} {Name} \n {Emoji.Calendar} Дата: { Date.ToString("D")}\n {Emoji.Clock2} Время: {Date.ToString("t")}";
+    }    
     public bool SetDate(string text)
     {
         DateTime date;

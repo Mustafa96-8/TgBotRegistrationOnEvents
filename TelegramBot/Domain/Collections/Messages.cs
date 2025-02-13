@@ -37,6 +37,7 @@ public static class Messages
         public static string NewUserRegistered => "Новый пользователь зарегестрировался: ";
         public static string UserUnregrisered => "Пользователь отменил регистрацию: ";
         public static string PrintNewAdminId => "Введите Telegram id нового администратора:";
+        public static string PrintDeletePersonId => "Введите Telegram id для удаления пользователя/Администратора:";
         public static string NewAdminAdded => "Новый администратор добавлен";
         public static string CountOfRegisteredUsersOnEvent => "Зарегестрировано на мероприятие:";
         public static string PrintEventName => "Введите название мероприятия:";
@@ -51,6 +52,7 @@ public static class Messages
         public static string UsersNotFound => "Пользователей не найдено";
         public static string YouHaveBeenAssignedTheAdminRole => "Вам выдана роль администратора";
         public static string PersonWasDeleted => "Пользователь/Администратор удалён";
+        public static string WrongTelegramId => "Неверный телеграм Id, Введите его снова";
 
     }
 

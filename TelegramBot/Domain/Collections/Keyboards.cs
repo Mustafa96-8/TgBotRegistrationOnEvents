@@ -23,17 +23,15 @@ namespace TelegramBot.Domain.Collections
                 pageButtons.Add(getButtonNext(operation, page, totalEvents));
             }
 
-            if(operation != "g")
-            {
-                int i = page * ApplicationConstants.numberOfObjectsPerPage + 1;
-                var inlineButtons = events
-                 .Select(n => new[] {
-                     InlineKeyboardButton.WithCallbackData(
-                         text: (i++).AddUnicodeSymbols("\uFE0F\u20E3") + " " + n.Name + " ",
-                         callbackData: ":" + operation + n.Id) })
-                 .ToArray();
-                buttonsList.AddRange(inlineButtons);
-            }
+            int i = page * ApplicationConstants.numberOfObjectsPerPage + 1;
+            var inlineButtons = events
+                .Select(n => new[] {
+                    InlineKeyboardButton.WithCallbackData(
+                        text: (i++).AddUnicodeSymbols("\uFE0F\u20E3") + " " + n.Name + " ",
+                        callbackData: ":" + operation + n.Id) })
+                .ToArray();
+            buttonsList.AddRange(inlineButtons);
+            
             if(pageButtons.Any())
             {
                 buttonsList.Add(pageButtons.ToArray());
@@ -74,29 +72,7 @@ namespace TelegramBot.Domain.Collections
             });
             return inlineKeyboard;
         }
-        public static InlineKeyboardMarkup GetUserMenuInEventsKeyboard(int eventsCount, string operation, int page)
-        {
-            InlineKeyboardButton[]? pageButtons = new[]{
-                getButtonPrev(operation, page),
-                getButtonNext(operation, page,eventsCount)
-            };
-            var inlineKeyboard = new[]
-            {
-            new []
-            {
-                InlineKeyboardButton.WithCallbackData(text: "Назад", callbackData: "/getMenu")
-            },
-            new []
-            {
-                InlineKeyboardButton.WithCallbackData(text: "Отменить регистрацию", callbackData: "/unregister")
-            },
-            new []
-            {
-                InlineKeyboardButton.WithCallbackData(text: "Зарегестрироваться на мероприятие", callbackData: "/getEvent")
-            }
-            };
-            return new InlineKeyboardMarkup(inlineKeyboard.Append(pageButtons));
-        }
+
         public static InlineKeyboardMarkup GetKeyBoardYesOrNo()
         {
             InlineKeyboardMarkup inlineKeyboard = new(new[]
@@ -142,11 +118,11 @@ namespace TelegramBot.Domain.Collections
             {
             new []
             {
-                InlineKeyboardButton.WithCallbackData(text: "Получить список зарегестрированных", callbackData: "/getUsers"),
+                InlineKeyboardButton.WithCallbackData(text: "Список зарегестрированных", callbackData: "/getUsers"),
             },
             new []
             {
-                InlineKeyboardButton.WithCallbackData(text: "Получить список мероприятий", callbackData: "/getevents"),
+                InlineKeyboardButton.WithCallbackData(text: "Список мероприятий", callbackData: "/getevents"),
             },
             new []
             {
