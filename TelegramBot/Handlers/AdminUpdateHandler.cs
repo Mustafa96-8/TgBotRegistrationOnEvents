@@ -233,19 +233,19 @@ public class AdminUpdateHandler
     {
         if (adminProfile.CurrentEvent == null || string.IsNullOrEmpty(msg.Text))
         {
-            return await sendInfoService.SendMessage(msg ,adminProfile ,Messages.SomethingWentWrong, GetAdminKeyboard(), cancellationToken);
+            return await sendInfoService.SendMessage(adminProfile ,Messages.SomethingWentWrong, GetAdminKeyboard(), cancellationToken);
         }
 
         Event newEvent = await eventService.Get(adminProfile.CurrentEvent, cancellationToken);
         if (newEvent == null)
         {
             adminProfile.ResetCurrentEvent();
-            return await sendInfoService.SendMessage(msg ,adminProfile ,Messages.Admin.EventNotFound,GetAdminKeyboard(), cancellationToken);
+            return await sendInfoService.SendMessage(adminProfile ,Messages.Admin.EventNotFound,GetAdminKeyboard(), cancellationToken);
         }
         newEvent.Name = msg.Text;
         adminProfile.SetAdminState(AdminStates.awaiting_eventDateTime);
         await eventService.Update(newEvent, cancellationToken);
-        return await sendInfoService.SendMessage(msg,adminProfile, Messages.Admin.PrintEventDateTime, null, cancellationToken);
+        return await sendInfoService.SendMessage(adminProfile, Messages.Admin.PrintEventDateTime, null, cancellationToken);
     }
 
 
@@ -253,37 +253,37 @@ public class AdminUpdateHandler
     {
         if (adminProfile.CurrentEvent == null || string.IsNullOrEmpty(msg.Text))
         {
-            return await sendInfoService.SendMessage(msg, adminProfile,Messages.SomethingWentWrong, null, cancellationToken: cancellationToken);
+            return await sendInfoService.SendMessage( adminProfile,Messages.SomethingWentWrong, null, cancellationToken: cancellationToken);
         }
 
         Event newEvent = await eventService.Get(adminProfile.CurrentEvent, cancellationToken);
         if (newEvent == null)
         {
             adminProfile.ResetCurrentEvent();
-            return await sendInfoService.SendMessage(msg,adminProfile, Messages.Admin.EventNotFound,GetAdminKeyboard(), cancellationToken: cancellationToken);
+            return await sendInfoService.SendMessage(adminProfile, Messages.Admin.EventNotFound,GetAdminKeyboard(), cancellationToken: cancellationToken);
         }
 
         if (!newEvent.SetDate(msg.Text))
         {
-            return await sendInfoService.SendMessage(msg,adminProfile, Messages.Admin.WrongDateTimeFormat,null, cancellationToken);
+            return await sendInfoService.SendMessage(adminProfile, Messages.Admin.WrongDateTimeFormat,null, cancellationToken);
         }
 
         adminProfile.SetAdminState(AdminStates.awaiting_eventDescription);
         await eventService.Update(newEvent, cancellationToken);
-        return await sendInfoService.SendMessage(msg,adminProfile, Messages.Admin.PrintEventDescription,null,cancellationToken);
+        return await sendInfoService.SendMessage(adminProfile, Messages.Admin.PrintEventDescription,null,cancellationToken);
     }
     private async Task<Message> HandleEventDescription()
     {
         if (adminProfile.CurrentEvent == null || string.IsNullOrEmpty(msg.Text))
         {
-            return await sendInfoService.SendMessage(msg,adminProfile, Messages.SomethingWentWrong, GetAdminKeyboard(), cancellationToken);
+            return await sendInfoService.SendMessage(adminProfile, Messages.SomethingWentWrong, GetAdminKeyboard(), cancellationToken);
         }
 
         Event newEvent = await eventService.Get(adminProfile.CurrentEvent, cancellationToken);
         if (newEvent == null)
         {
             adminProfile.ResetCurrentEvent();
-            return await sendInfoService.SendMessage(msg,adminProfile, Messages.Admin.EventNotFound, GetAdminKeyboard(),cancellationToken);
+            return await sendInfoService.SendMessage(adminProfile, Messages.Admin.EventNotFound, GetAdminKeyboard(),cancellationToken);
         }
         newEvent.Description = msg.Text;
         adminProfile.ResetCurrentEvent();
@@ -296,7 +296,7 @@ public class AdminUpdateHandler
     private async Task<Message> HandleGetEvent()
     {
         var events = await eventService.GetAll(cancellationToken);
-        return await sendInfoService.SendMessage(msg,adminProfile, GetEventsString(events),GetAdminKeyboard(),cancellationToken);
+        return await sendInfoService.SendMessage(adminProfile, GetEventsString(events),GetAdminKeyboard(),cancellationToken);
     }
     #endregion
     private async Task<Message> DeleteProfileDebug()

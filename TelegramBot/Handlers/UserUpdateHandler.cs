@@ -144,8 +144,8 @@ public class UserUpdateHandler
         };
 
         if (userProfile.UserState is UserStates.awaiting_registration or UserStates.awaiting_name)
-            return await sendInfoService.SendMessage(msg,userProfile,promptMessage,null,cancellationToken);
-        return await sendInfoService.SendMessage(msg, userProfile, promptMessage, Keyboards.GetKeyBoardInRegistration(), cancellationToken);
+            return await sendInfoService.SendMessage(userProfile,promptMessage,null,cancellationToken);
+        return await sendInfoService.SendMessage( userProfile, promptMessage, Keyboards.GetKeyBoardInRegistration(), cancellationToken);
 
     }
 
@@ -153,9 +153,9 @@ public class UserUpdateHandler
     {
         if (userProfile.StartRegistration())
         {
-            return await sendInfoService.SendMessage(msg,userProfile, Messages.AreYou18, GetKeyBoardYesOrNo(), cancellationToken);
+            return await sendInfoService.SendMessage(userProfile, Messages.AreYou18, GetKeyBoardYesOrNo(), cancellationToken);
         }
-        return await sendInfoService.SendMessage(msg,userProfile, Messages.YouHaveAlreadyRegistered, null, cancellationToken);
+        return await sendInfoService.SendMessage(userProfile, Messages.YouHaveAlreadyRegistered, null, cancellationToken);
     }
 
     private async Task<Message> HandleChekIsEighteen(string messageText = null)
@@ -163,7 +163,7 @@ public class UserUpdateHandler
         messageText ??= msg.Text;
         if (userProfile.ChekUserIsEighteen(messageText))
         {
-            return await sendInfoService.SendMessage(msg,userProfile, Messages.PrintYouName, null,cancellationToken);
+            return await sendInfoService.SendMessage(userProfile, Messages.PrintYouName, null,cancellationToken);
         }
         await userProfileService.Delete(userProfile, cancellationToken);
         return await sendInfoService.SendSimpleMessage(msg, Messages.RegistrationOnly18, null,cancellationToken);
@@ -173,9 +173,9 @@ public class UserUpdateHandler
     {
         if (userProfile.SetName(msg.Text))
         {
-            return await sendInfoService.SendMessage(msg,userProfile, Messages.PrintPhoneNumber, GetKeyBoardInRegistration(),cancellationToken);
+            return await sendInfoService.SendMessage(userProfile, Messages.PrintPhoneNumber, GetKeyBoardInRegistration(),cancellationToken);
         }
-        return await sendInfoService.SendMessage(msg,userProfile, Messages.SomethingWentWrong, null,cancellationToken);
+        return await sendInfoService.SendMessage(userProfile, Messages.SomethingWentWrong, null,cancellationToken);
     }
 
     private async Task<Message> HandleAwaitingPhone()
@@ -184,9 +184,9 @@ public class UserUpdateHandler
         {
             if (userProfile.SetPhoneNumber(msg.Text))
             {
-                return await sendInfoService.SendMessage(msg,userProfile, Messages.ChangingPhoneNumber + userProfile.PhoneNumber, null,cancellationToken);
+                return await sendInfoService.SendMessage(userProfile, Messages.ChangingPhoneNumber + userProfile.PhoneNumber, null,cancellationToken);
             }
-            return await sendInfoService.SendMessage(msg,userProfile, Messages.WrongPhoneNumberFormat, GetKeyBoardCancel(),cancellationToken);
+            return await sendInfoService.SendMessage(userProfile, Messages.WrongPhoneNumberFormat, GetKeyBoardCancel(),cancellationToken);
         }
         else
         {
@@ -195,7 +195,7 @@ public class UserUpdateHandler
                 return await PrintEventsOnPage("r");
             }
         }
-        return await sendInfoService.SendMessage(msg,userProfile, Messages.WrongPhoneNumberFormat, GetKeyBoardInRegistration(),cancellationToken);
+        return await sendInfoService.SendMessage(userProfile, Messages.WrongPhoneNumberFormat, GetKeyBoardInRegistration(),cancellationToken);
     }
 
     private async Task<Message> PrintEventsOnPage(string command,int page=0)
@@ -228,7 +228,7 @@ public class UserUpdateHandler
         }
         if (!await userProfileService.Register(userProfile, myEvent, cancellationToken))
         {
-            return await sendInfoService.SendMessage(msg,userProfile, Messages.ErrorInRegistrOnEvent, GetUserMenuKeyboard(),cancellationToken);
+            return await sendInfoService.SendMessage(userProfile, Messages.ErrorInRegistrOnEvent, GetUserMenuKeyboard(),cancellationToken);
         }
         await AdminGetUsersNotification(myEvent, Messages.Admin.NewUserRegistered + "\n" + myEvent.ToString());
         return await sendInfoService.EditOrSendMessage(msg, userProfile, String.Concat(Messages.YouHaveRegisteredForTheEvent,"\n",myEvent.ToString(),"\n",myEvent.Description), GetUserMenuKeyboard(), cancellationToken);
@@ -240,7 +240,7 @@ public class UserUpdateHandler
         Event? unregisterEvent = await eventService.Get(eventId, cancellationToken);
         if (unregisterEvent == null)
         {
-            return await sendInfoService.SendMessage(msg,userProfile, Messages.Admin.EventNotFound,GetUserMenuKeyboard(),cancellationToken);
+            return await sendInfoService.SendMessage(userProfile, Messages.Admin.EventNotFound,GetUserMenuKeyboard(),cancellationToken);
         }
         await userProfileService.Unregister(userProfile,unregisterEvent, cancellationToken);
         
@@ -270,7 +270,7 @@ public class UserUpdateHandler
         Message message = new Message();
         foreach (var admin in admins)
         {
-            message = await sendInfoService.SendMessage(msg,admin, messageText + "\n" + GetUserProfileInfo(userProfile) + "\n" + Messages.Admin.CountOfRegisteredUsersOnEvent+" " + usersCount, null,cancellationToken);
+            message = await sendInfoService.SendMessage(admin, messageText + "\n" + GetUserProfileInfo(userProfile) + "\n" + Messages.Admin.CountOfRegisteredUsersOnEvent+" " + usersCount, null,cancellationToken);
             logger.LogInformation("The Admin message was sent with id: {SentMessageId}", message?.MessageId);
         }
         return;
@@ -283,9 +283,9 @@ public class UserUpdateHandler
             logger.LogInformation(await userProfileService.Delete(userProfile, cancellationToken));
             AdminProfile Admin = (AdminProfile)person;
             logger.LogInformation(await adminProfileService.Create(Admin, cancellationToken));
-            return await sendInfoService.SendMessage(msg,Admin, Messages.Admin.YouHaveBeenAssignedTheAdminRole,GetAdminKeyboard(),cancellationToken);
+            return await sendInfoService.SendMessage(Admin, Messages.Admin.YouHaveBeenAssignedTheAdminRole,GetAdminKeyboard(),cancellationToken);
         }
-        return await sendInfoService.SendMessage(msg,userProfile, Messages.YouHaveNoPermissionsToUseThisCommand,GetUserMenuKeyboard(),cancellationToken);
+        return await sendInfoService.SendMessage(userProfile, Messages.YouHaveNoPermissionsToUseThisCommand,GetUserMenuKeyboard(),cancellationToken);
     }
     #endregion
 

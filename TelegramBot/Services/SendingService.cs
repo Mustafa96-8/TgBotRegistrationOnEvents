@@ -40,10 +40,10 @@ public class SendingService
 
     }
 
-    public async Task<Message> SendMessage(Message msg, Person person, string _text, InlineKeyboardMarkup _replyMarkup, CancellationToken cancellationToken)
+    public async Task<Message> SendMessage(Person person, string _text, InlineKeyboardMarkup _replyMarkup, CancellationToken cancellationToken)
     {
         var sentMessage = await bot.SendMessage(
-         chatId: msg.Chat.Id,
+         chatId: person.Id,
          text: _text,
          replyMarkup: _replyMarkup,
          cancellationToken: cancellationToken

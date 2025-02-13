@@ -94,11 +94,11 @@ public class UpdateHandler : IUpdateHandler
         }
         if(msg.Text == "/getcontact")
         {
-            sendInfoService.SendMessage(msg, person, Messages.Contacts.GetSommelierContact, null, cancellationToken);
+            sendInfoService.SendMessage( person, Messages.Contacts.GetSommelierContact, null, cancellationToken);
         }
         if (msg.Text == "/getdevelopercontact")
         {
-            sendInfoService.SendMessage(msg, person, Messages.Contacts.GetDeveloperContact, null, cancellationToken);
+            sendInfoService.SendMessage( person, Messages.Contacts.GetDeveloperContact, null, cancellationToken);
         }
 
         if (person.role == Roles.Admin)

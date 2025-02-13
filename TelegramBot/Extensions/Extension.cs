@@ -1,4 +1,6 @@
-﻿using System;
+﻿using DocumentFormat.OpenXml.Drawing.Diagrams;
+using Microsoft.Extensions.Primitives;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,5 +18,25 @@ namespace TelegramBot.Extensions
             int j = Array.IndexOf<T>(Arr, src) - 1;
             return ( j<=0 ) ? Arr[0] : Arr[j];
         }
+        public static string ToStringDDMMYYYY(this DateTime date)
+        {
+            return $"{date.Day}.{date.Month}.{date.Year}";
+        }
+        public static string ToStringTimeHHMM(this DateTime date)
+        {
+            return $"{date.Hour}:{date.Minute}";
+        }
+
+        public static string AddUnicodeSymbols(this int number,string unicodes)
+        {
+            char[] chars = number.ToString().ToCharArray();
+            StringBuilder result = new();
+            foreach(char item in chars)
+            {
+                result.Append(item+unicodes);
+            }
+            return result.ToString();
+        }
     }
+
 }

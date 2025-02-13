@@ -1,5 +1,6 @@
 ﻿using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBot.Domain.Entities;
+using TelegramBot.Extensions;
 
 namespace TelegramBot.Domain.Collections
 {
@@ -8,42 +9,50 @@ namespace TelegramBot.Domain.Collections
 
         public static InlineKeyboardMarkup GetEventKeyboard(IEnumerable<Event> events, string operation, int page = 0, bool IsButtonsOn = true)
         {
-            InlineKeyboardButton[]? pageButtons = new[]{
-                getButtonPrev(operation, page),
-                getButtonNext(operation, page,events.Count())
-             };
+            var buttonsList = new List<InlineKeyboardButton[]>();
 
-            var backButton = new[]
-            {
-                InlineKeyboardButton.WithCallbackData(text: "Назад", callbackData: "/getMenu")
-            };
+            int totalEvents = events.Count();
+            var pageButtons = new List<InlineKeyboardButton>();
 
-            if(operation == "g")
+            if(page > 0) // Кнопка "Prev" появляется только если это НЕ первая страница
             {
-                return new InlineKeyboardMarkup(new[] { pageButtons, backButton });
+                pageButtons.Add(getButtonPrev(operation, page));
+            }
+            if(totalEvents >= ApplicationConstants.numberOfObjectsPerPage) // Кнопка "Next" появляется только если это НЕ последняя страница
+            {
+                pageButtons.Add(getButtonNext(operation, page, totalEvents));
             }
 
-            int i = page * ApplicationConstants.numberOfObjectsPerPage;
-            var inlineButtons = events
-             .Select(n => new[] {InlineKeyboardButton.WithCallbackData(text: "№"+ (i++).ToString()+" " + n.Name + " ", callbackData: ":" + operation + n.Id)})
-             .ToArray();
+            if(operation != "g")
+            {
+                int i = page * ApplicationConstants.numberOfObjectsPerPage + 1;
+                var inlineButtons = events
+                 .Select(n => new[] {
+                     InlineKeyboardButton.WithCallbackData(
+                         text: (i++).AddUnicodeSymbols("\uFE0F\u20E3") + " " + n.Name + " ",
+                         callbackData: ":" + operation + n.Id) })
+                 .ToArray();
+                buttonsList.AddRange(inlineButtons);
+            }
+            if(pageButtons.Any())
+            {
+                buttonsList.Add(pageButtons.ToArray());
+            }
+            buttonsList.Add(new[] { InlineKeyboardButton.WithCallbackData(text: "\u21A9 Назад", callbackData: "/getMenu") });
 
-            return new InlineKeyboardMarkup(inlineButtons.Append(pageButtons).Append(backButton));
+            return new InlineKeyboardMarkup(buttonsList);
         }
+
         public static InlineKeyboardButton getButtonPrev(string operation,int page)
-        {
-            if (page != 0)
-            {
-                return InlineKeyboardButton.WithCallbackData(text: "<-", callbackData: string.Concat("<-", '|', operation, '|', page));
-            }
-            return InlineKeyboardButton.WithCallbackData(text: "-|-", callbackData: "/pass");
-        }
+            => InlineKeyboardButton.WithCallbackData(
+                text: "\u2B05", 
+                callbackData: string.Concat("<-", '|', operation, '|', page));
+
         public static InlineKeyboardButton getButtonNext(string operation, int page,int eventCount)
-        {
-            if (eventCount < ApplicationConstants.numberOfObjectsPerPage) 
-                return InlineKeyboardButton.WithCallbackData(text: "-|-",callbackData: "/pass");
-            return InlineKeyboardButton.WithCallbackData(text: "->", callbackData: string.Concat("->", '|', operation, '|', page));
-        }
+            => InlineKeyboardButton.WithCallbackData(
+                text: "\u27A1", 
+                callbackData: string.Concat("->", '|', operation, '|', page));
+        
 
         public static InlineKeyboardMarkup GetUserMenuKeyboard()
         {
