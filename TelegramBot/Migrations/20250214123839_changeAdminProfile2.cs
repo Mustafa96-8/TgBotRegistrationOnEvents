@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TelegramBot.Migrations
 {
     /// <inheritdoc />
-    public partial class changeAdminProfile : Migration
+    public partial class changeAdminProfile2 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

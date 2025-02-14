@@ -30,21 +30,22 @@ public class AdminProfileService
     }
 
 
-    public async Task<bool> Register(AdminProfile userProfile, Event myEvent, CancellationToken ct)
+    public async Task<bool> Register(AdminProfile adminProfile, Event myEvent, CancellationToken ct)
     {
-        userProfile.Events.Add(myEvent);
+        adminProfile.Events.Add(myEvent);
         unitOfWork.EventRepository.Update(myEvent);
 
-        unitOfWork.AdminProfileRepository.Update(userProfile);
+        unitOfWork.AdminProfileRepository.Update(adminProfile);
         int result = await unitOfWork.Save(ct);
         return result != 0;
     }
 
-    public async Task<bool> Unregister(AdminProfile userProfile, Event myEvent, CancellationToken ct)
+    public async Task<bool> Unregister(AdminProfile adminProfile, Event myEvent, CancellationToken ct)
     {
-        userProfile.Events.Remove(myEvent);
+        adminProfile.Events.Remove(myEvent);
+        myEvent.AdminProfiles.Remove(adminProfile);
         unitOfWork.EventRepository.Update(myEvent);
-        unitOfWork.AdminProfileRepository.Update(userProfile);
+        unitOfWork.AdminProfileRepository.Update(adminProfile);
         int result = await unitOfWork.Save(ct);
         return result != 0;
     }

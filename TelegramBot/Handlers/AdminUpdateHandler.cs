@@ -133,11 +133,11 @@ public class AdminUpdateHandler
 
             if(command == "r")
             {
-                events = await eventService.GetWithPagination(cancellationToken, page, u => !adminProfile.Events.Contains(u));
+                events = await eventService.GetWithPagination(cancellationToken, page, u => !u.AdminProfiles.Contains(adminProfile));
             }
             else
             {
-                events = await eventService.GetWithPagination(cancellationToken, page, u => adminProfile.Events.Contains(u));
+                events = await eventService.GetWithPagination(cancellationToken, page, u => u.AdminProfiles.Contains(adminProfile));
             }
         }
         else 

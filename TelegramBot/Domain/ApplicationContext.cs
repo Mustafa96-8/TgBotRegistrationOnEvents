@@ -46,7 +46,7 @@ namespace TelegramBot.Domain
                         );
             modelBuilder.Entity<AdminProfile>()
                         .HasMany(u => u.Events)
-                        .WithMany()
+                        .WithMany(u=>u.AdminProfiles)
                         .UsingEntity<Dictionary<string, object>>(
                         "AdminProfileEvent",
                             j => j.HasOne<Event>().WithMany().HasForeignKey("EventId").OnDelete(DeleteBehavior.Cascade),

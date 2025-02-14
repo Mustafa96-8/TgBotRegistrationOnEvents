@@ -16,6 +16,7 @@ public class Event
     public DateTime Date { get; private set;}
 
     public ICollection<UserProfile> UserProfiles { get; set; } = new List<UserProfile>();
+    public ICollection<AdminProfile> AdminProfiles { get; set; } = new List<AdminProfile>();
 
     public string GetDescription() => $"{Emoji.Page_Facing_Up} {Description} \n";
     public override string ToString()
