@@ -31,12 +31,12 @@ public static class GetInfoHelper
     }
     public static string GetEventsString(IEnumerable<Event> events,string message = "Мероприятия",int page = 0)
     {
-        string eventString =$" {(page+1).AddUnicodeSymbols("\uFE0F\u20E3")} {message}:\n\n";
+        string eventString =$" <b>{message}(стр. {page + 1}):</b>\n\n";
         int i = ApplicationConstants.numberOfObjectsPerPage*page;
         foreach (var x in events)
         {
             i++;
-            eventString += $" {i.AddUnicodeSymbols("\uFE0F\u20E3")} {x.Name}\n  {Emoji.Date} Дата: {x.Date.ToString("D")}\n  {Emoji.Clock2} Время: {x.Date.ToString("t")} \n\n";
+            eventString += $" <b>{i}. {x.Name}</b>\n<i>{Emoji.Date} Дата: {x.Date.ToString("D")}</i>\n{Emoji.Clock2} Время: {x.Date.ToString("t")} \n\n";
         }
         if (i == 0)
         {

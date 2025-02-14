@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TelegramBot.Migrations
 {
     /// <inheritdoc />
-    public partial class init : Migration
+    public partial class changeAdminProfile : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -24,6 +24,20 @@ namespace TelegramBot.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AdminProfiles", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Events",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Description = table.Column<string>(type: "TEXT", nullable: false),
+                    Date = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Events", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -58,77 +72,84 @@ namespace TelegramBot.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Events",
+                name: "AdminProfileEvent",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Name = table.Column<string>(type: "TEXT", nullable: false),
-                    Description = table.Column<string>(type: "TEXT", nullable: false),
-                    Date = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    AdminProfileId = table.Column<long>(type: "INTEGER", nullable: true)
+                    AdminProfileId = table.Column<long>(type: "INTEGER", nullable: false),
+                    EventId = table.Column<Guid>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Events", x => x.Id);
+                    table.PrimaryKey("PK_AdminProfileEvent", x => new { x.AdminProfileId, x.EventId });
                     table.ForeignKey(
-                        name: "FK_Events_AdminProfiles_AdminProfileId",
+                        name: "FK_AdminProfileEvent_AdminProfiles_AdminProfileId",
                         column: x => x.AdminProfileId,
                         principalTable: "AdminProfiles",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AdminProfileEvent_Events_EventId",
+                        column: x => x.EventId,
+                        principalTable: "Events",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "EventUserProfile",
+                name: "UserProfileEvent",
                 columns: table => new
                 {
-                    EventsId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    UserProfilesId = table.Column<long>(type: "INTEGER", nullable: false)
+                    EventId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    UserProfileId = table.Column<long>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_EventUserProfile", x => new { x.EventsId, x.UserProfilesId });
+                    table.PrimaryKey("PK_UserProfileEvent", x => new { x.EventId, x.UserProfileId });
                     table.ForeignKey(
-                        name: "FK_EventUserProfile_Events_EventsId",
-                        column: x => x.EventsId,
+                        name: "FK_UserProfileEvent_Events_EventId",
+                        column: x => x.EventId,
                         principalTable: "Events",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_EventUserProfile_UserProfiles_UserProfilesId",
-                        column: x => x.UserProfilesId,
+                        name: "FK_UserProfileEvent_UserProfiles_UserProfileId",
+                        column: x => x.UserProfileId,
                         principalTable: "UserProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Events_AdminProfileId",
-                table: "Events",
-                column: "AdminProfileId");
+                name: "IX_AdminProfileEvent_EventId",
+                table: "AdminProfileEvent",
+                column: "EventId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EventUserProfile_UserProfilesId",
-                table: "EventUserProfile",
-                column: "UserProfilesId");
+                name: "IX_UserProfileEvent_UserProfileId",
+                table: "UserProfileEvent",
+                column: "UserProfileId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "EventUserProfile");
+                name: "AdminProfileEvent");
 
             migrationBuilder.DropTable(
                 name: "Persons");
+
+            migrationBuilder.DropTable(
+                name: "UserProfileEvent");
+
+            migrationBuilder.DropTable(
+                name: "AdminProfiles");
 
             migrationBuilder.DropTable(
                 name: "Events");
 
             migrationBuilder.DropTable(
                 name: "UserProfiles");
-
-            migrationBuilder.DropTable(
-                name: "AdminProfiles");
         }
     }
 }

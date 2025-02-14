@@ -17,14 +17,26 @@ namespace TelegramBot.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.1");
 
+            modelBuilder.Entity("AdminProfileEvent", b =>
+                {
+                    b.Property<long>("AdminProfileId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("AdminProfileId", "EventId");
+
+                    b.HasIndex("EventId");
+
+                    b.ToTable("AdminProfileEvent");
+                });
+
             modelBuilder.Entity("TelegramBot.Domain.Entities.Event", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
-
-                    b.Property<long?>("AdminProfileId")
-                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("TEXT");
@@ -38,8 +50,6 @@ namespace TelegramBot.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AdminProfileId");
 
                     b.ToTable("Events");
                 });
@@ -112,11 +122,19 @@ namespace TelegramBot.Migrations
                     b.ToTable("UserProfiles");
                 });
 
-            modelBuilder.Entity("TelegramBot.Domain.Entities.Event", b =>
+            modelBuilder.Entity("AdminProfileEvent", b =>
                 {
                     b.HasOne("TelegramBot.Domain.Entities.AdminProfile", null)
-                        .WithMany("NotificationList")
-                        .HasForeignKey("AdminProfileId");
+                        .WithMany()
+                        .HasForeignKey("AdminProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TelegramBot.Domain.Entities.Event", null)
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("UserProfileEvent", b =>
@@ -132,11 +150,6 @@ namespace TelegramBot.Migrations
                         .HasForeignKey("UserProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("TelegramBot.Domain.Entities.AdminProfile", b =>
-                {
-                    b.Navigation("NotificationList");
                 });
 #pragma warning restore 612, 618
         }

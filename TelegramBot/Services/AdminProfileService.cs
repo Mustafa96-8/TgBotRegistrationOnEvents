@@ -29,6 +29,27 @@ public class AdminProfileService
         return admins;
     }
 
+
+    public async Task<bool> Register(AdminProfile userProfile, Event myEvent, CancellationToken ct)
+    {
+        userProfile.Events.Add(myEvent);
+        unitOfWork.EventRepository.Update(myEvent);
+
+        unitOfWork.AdminProfileRepository.Update(userProfile);
+        int result = await unitOfWork.Save(ct);
+        return result != 0;
+    }
+
+    public async Task<bool> Unregister(AdminProfile userProfile, Event myEvent, CancellationToken ct)
+    {
+        userProfile.Events.Remove(myEvent);
+        unitOfWork.EventRepository.Update(myEvent);
+        unitOfWork.AdminProfileRepository.Update(userProfile);
+        int result = await unitOfWork.Save(ct);
+        return result != 0;
+    }
+
+
     public async Task<string> Update(AdminProfile adminProfile, CancellationToken ct)
     {
         var adminProfileFromDb = await unitOfWork.AdminProfileRepository.GetByID(adminProfile.Id, ct);

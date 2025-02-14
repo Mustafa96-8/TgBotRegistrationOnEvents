@@ -33,6 +33,7 @@ public class SendingService
     {
         return await bot.SendMessage(
          chatId: msg.Chat.Id,
+         parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
          text: _text,
          replyMarkup: _replyMarkup,
          cancellationToken: cancellationToken
@@ -45,6 +46,7 @@ public class SendingService
         var sentMessage = await bot.SendMessage(
          chatId: person.Id,
          text: _text,
+         parseMode:Telegram.Bot.Types.Enums.ParseMode.Html,
          replyMarkup: _replyMarkup,
          cancellationToken: cancellationToken
         );
@@ -65,6 +67,10 @@ public class SendingService
     public async Task<Message> EditOrSendMessage(Message msg, Person person, string _text, InlineKeyboardMarkup _replyMarkup, CancellationToken cancellationToken)
     {
 
+        if(person == null)
+        {
+            return await SendSimpleMessage(msg, _text, _replyMarkup, cancellationToken);
+        }
         // Проверка, является ли сообщение с профилем последним в переписке
         if (person.LastProfileMessageId.HasValue && person.LastProfileMessageId == msg.Id)
         {
@@ -74,6 +80,7 @@ public class SendingService
                 await bot.EditMessageText(
                     chatId: msg.Chat.Id,
                     messageId: person.LastProfileMessageId.Value,
+                             parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
                     text: _text,
                     replyMarkup: _replyMarkup,
                     cancellationToken: cancellationToken
@@ -98,7 +105,8 @@ public class SendingService
         // Отправляем новое сообщение и сохраняем его ID
         var sentMessage = await bot.SendMessage(
             chatId: msg.Chat.Id,
-            text: _text,
+            text: _text, 
+            parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
             replyMarkup: _replyMarkup,
             cancellationToken: cancellationToken
         );

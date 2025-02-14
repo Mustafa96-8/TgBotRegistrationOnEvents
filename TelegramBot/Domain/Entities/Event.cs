@@ -20,7 +20,7 @@ public class Event
     public string GetDescription() => $"{Emoji.Page_Facing_Up} {Description} \n";
     public override string ToString()
     {
-        return $"\n{Emoji.Wine_Glass} {Name} \n {Emoji.Calendar} Дата: { Date.ToString("D")}\n {Emoji.Clock2} Время: {Date.ToString("t")}";
+        return $"\n<b>{Name} </b>\n{Emoji.Calendar} Дата: { Date.ToString("D")}\n{Emoji.Clock2} Время: {Date.ToString("t")}";
     }    
     public bool SetDate(string text)
     {

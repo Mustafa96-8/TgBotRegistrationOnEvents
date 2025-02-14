@@ -69,6 +69,7 @@ public class UserUpdateHandler
 
     public async Task OnCallbackQuery(Message _msg, UserProfile _userProfile, char command, Guid eventId)
     {
+        if(!_userProfile.IsRegistered) { return; }
         this.msg = _msg;
         this.userProfile = _userProfile;
         messageText = msg.Text ?? "";
@@ -88,22 +89,40 @@ public class UserUpdateHandler
         this.userProfile = _userProfile;
         messageText = msg.Text;
         var callbackQueryDataArgs = (callbackQuery.Data ?? " ").Split('|');
-        Message sentMessage = await (callbackQueryDataArgs[0] switch
+        if(!_userProfile.IsRegistered)
         {
-            "/getMenu" => HandleGetUserMenu(),
-            "/getEvent" => PrintEventsOnPage("r"),
-            "/getRegisterEvents" => PrintEventsOnPage("g"),
-            "/unregister" => PrintEventsOnPage("u"),
-            "yes" => HandleChekIsEighteen("yes"),
-            "no" => HandleChekIsEighteen("no"),
-            "/start" => StartRegistration(),
-            "/back" => ChangeThePreviousField(),
-            "->" => PrintEventsOnPage(callbackQueryDataArgs[1], int.Parse(callbackQueryDataArgs[2]) + 1),
-            "<-" => PrintEventsOnPage(callbackQueryDataArgs[1], int.Parse(callbackQueryDataArgs[2]) - 1),
-            _ => HandleUserInput()
-        });
-        userProfile.LastProfileMessageId = sentMessage.Id;
-        logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage?.MessageId);
+            Message sentMessage = await (callbackQueryDataArgs[0] switch
+            {
+                "yes" => HandleChekIsEighteen("yes"),
+                "no" => HandleChekIsEighteen("no"),
+                "/start" => StartRegistration(),
+                "/back" => ChangeThePreviousField(),
+                _ => HandleUserInput()
+            });
+            userProfile.LastProfileMessageId = sentMessage.Id;
+            logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage?.MessageId);
+
+        }
+        else
+        {
+            Message sentMessage = await (callbackQueryDataArgs[0] switch
+            {
+                "/getMenu" => HandleGetUserMenu(),
+                "/getEvent" => PrintEventsOnPage("r"),
+                "/getRegisterEvents" => PrintEventsOnPage("g"),
+                "/unregister" => PrintEventsOnPage("u"),
+                "yes" => HandleChekIsEighteen("yes"),
+                "no" => HandleChekIsEighteen("no"),
+                "/start" => StartRegistration(),
+                "/back" => ChangeThePreviousField(),
+                "->" => PrintEventsOnPage(callbackQueryDataArgs[1], int.Parse(callbackQueryDataArgs[2]) + 1),
+                "<-" => PrintEventsOnPage(callbackQueryDataArgs[1], int.Parse(callbackQueryDataArgs[2]) - 1),
+                _ => HandleUserInput()
+            });
+            userProfile.LastProfileMessageId = sentMessage.Id;
+            logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage?.MessageId);
+
+        }
     }
     private async Task<Message> HandleUserInput()
     {
@@ -129,6 +148,11 @@ public class UserUpdateHandler
 
     private async Task<Message> ChangeThePreviousField()
     {
+        if(userProfile.IsRegistered)
+        {
+            userProfile.StartRegistration();
+            return await HandleGetUserMenu();
+        }
         userProfile.ToPreviousState();
 
         string promptMessage = userProfile.UserState switch
@@ -168,6 +192,10 @@ public class UserUpdateHandler
 
     private async Task<Message> HandleAwaitingName()
     {
+        if(userProfile.IsRegistered)
+        {
+            return await HandleGetUserMenu();
+        }
         if (userProfile.SetName(msg.Text))
         {
             return await sendInfoService.SendMessage(userProfile, Messages.PrintPhoneNumber, GetKeyBoardInRegistration(),cancellationToken);
@@ -177,22 +205,15 @@ public class UserUpdateHandler
 
     private async Task<Message> HandleAwaitingPhone()
     {
-        if (userProfile.IsRegistered)
-        {
-            if (userProfile.SetPhoneNumber(msg.Text))
-            {
-                return await sendInfoService.SendMessage(userProfile, Messages.ChangingPhoneNumber + userProfile.PhoneNumber, null,cancellationToken);
-            }
-            return await sendInfoService.SendMessage(userProfile, Messages.WrongPhoneNumberFormat, GetKeyBoardCancel(),cancellationToken);
-        }
-        else
+        if (!userProfile.IsRegistered)
         {
             if (userProfile.SetPhoneNumber(msg.Text))
             {
                 return await PrintEventsOnPage("r");
             }
+            return await sendInfoService.SendMessage(userProfile, Messages.WrongPhoneNumberFormat, GetKeyBoardInRegistration(),cancellationToken);
         }
-        return await sendInfoService.SendMessage(userProfile, Messages.WrongPhoneNumberFormat, GetKeyBoardInRegistration(),cancellationToken);
+        return await HandleGetUserMenu();
     }
 
     private async Task<Message> PrintEventsOnPage(string command,int page=0)
@@ -252,7 +273,7 @@ public class UserUpdateHandler
 
     private async Task<Message> DeleteProfile()
     {
-        foreach(Event myEvent in userProfile.Events)
+        foreach(Event myEvent in userProfile.Events.ToList())
         {
             await userProfileService.Unregister(userProfile,myEvent,cancellationToken);
         }
@@ -266,7 +287,7 @@ public class UserUpdateHandler
 
     private async Task AdminGetUsersNotification(Event myEvent, string messageText)
     {
-        var admins = await adminProfileService.GetAll(cancellationToken, u => u.NotificationList.Contains(myEvent));
+        var admins = await adminProfileService.GetAll(cancellationToken, u => u.Events.Contains(myEvent));
         int usersCount = (await userProfileService.GetAllByEvent(myEvent, cancellationToken)).Count();
         Message message = new Message();
         foreach (var admin in admins)

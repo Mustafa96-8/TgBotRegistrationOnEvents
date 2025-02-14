@@ -158,7 +158,7 @@ public class UpdateHandler : IUpdateHandler
         {
             if (person.role == Roles.Admin)
             {
-                AdminProfile Admin = (AdminProfile)person;
+                AdminProfile Admin = await adminProfileService.Get(person.Id,cancellationToken);
                 AdminUpdateHandler adminUpdateHandler = new AdminUpdateHandler(adminProfileService, sendInfoService, userProfileService, eventService, personService, logger, cancellationToken);
                 await adminUpdateHandler.OnCallbackQuery(msg, Admin, callbackQuery);
             }

@@ -9,7 +9,8 @@ public class AdminProfile : Person
         role=Roles.Admin;
     }
     public AdminStates AdminState { get; private set; } = AdminStates.completed;
-    public ICollection<Event> NotificationList { get; private set; } = new List<Event>();
+    public ICollection<Event> Events { get; set; } = new List<Event>();
+
 
     public Guid? CurrentEvent { get; private set; } = null;
 
@@ -41,20 +42,4 @@ public class AdminProfile : Person
         CurrentEvent = null;
     }
 
-    public void ChangeNotification(Event? _event)
-    {
-        if (_event ==null) {return; }
-        if (IsNotification(_event))
-        {
-            NotificationList.Remove(_event);
-            return;
-        }
-        NotificationList.Add(_event);
-    }
-
-    public bool IsNotification(Event? _event) 
-    {
-        if (_event == null) { return false; }
-        return NotificationList.Contains(_event); 
-    }
 }

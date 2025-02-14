@@ -1,4 +1,5 @@
-﻿using Telegram.Bot.Types.ReplyMarkups;
+﻿using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBot.Domain.Entities;
 using TelegramBot.Extensions;
 
@@ -13,21 +14,32 @@ namespace TelegramBot.Domain.Collections
 
             int totalEvents = events.Count();
             var pageButtons = new List<InlineKeyboardButton>();
+            var backBtn = InlineKeyboardButton.WithCallbackData(text: "\u21A9 Назад", callbackData: "/getMenu");
+
 
             if(page > 0) // Кнопка "Prev" появляется только если это НЕ первая страница
             {
                 pageButtons.Add(getButtonPrev(operation, page));
             }
+            else
+            {
+                pageButtons.Add(backBtn);
+            }
             if(totalEvents >= ApplicationConstants.numberOfObjectsPerPage) // Кнопка "Next" появляется только если это НЕ последняя страница
             {
                 pageButtons.Add(getButtonNext(operation, page, totalEvents));
             }
+            else if(!pageButtons.Contains(backBtn))
+            {
+                pageButtons.Add(backBtn);
+            }
+
 
             int i = page * ApplicationConstants.numberOfObjectsPerPage + 1;
             var inlineButtons = events
                 .Select(n => new[] {
                     InlineKeyboardButton.WithCallbackData(
-                        text: (i++).AddUnicodeSymbols("\uFE0F\u20E3") + " " + n.Name + " ",
+                        text: $"{(i++)}  {n.Name}",
                         callbackData: ":" + operation + n.Id) })
                 .ToArray();
             buttonsList.AddRange(inlineButtons);
@@ -36,19 +48,22 @@ namespace TelegramBot.Domain.Collections
             {
                 buttonsList.Add(pageButtons.ToArray());
             }
-            buttonsList.Add(new[] { InlineKeyboardButton.WithCallbackData(text: "\u21A9 Назад", callbackData: "/getMenu") });
+            if(!pageButtons.Contains(backBtn))
+            {
+                buttonsList.Add(new[]{ backBtn });
+            }
 
             return new InlineKeyboardMarkup(buttonsList);
         }
 
         public static InlineKeyboardButton getButtonPrev(string operation,int page)
             => InlineKeyboardButton.WithCallbackData(
-                text: "\u2B05", 
+                text: "\u2B05 пред. стр.", 
                 callbackData: string.Concat("<-", '|', operation, '|', page));
 
         public static InlineKeyboardButton getButtonNext(string operation, int page,int eventCount)
             => InlineKeyboardButton.WithCallbackData(
-                text: "\u27A1", 
+                text: "след. стр. \u27A1", 
                 callbackData: string.Concat("->", '|', operation, '|', page));
         
 
@@ -126,7 +141,8 @@ namespace TelegramBot.Domain.Collections
             },
             new []
             {
-                InlineKeyboardButton.WithCallbackData(text: "Переключить оповещения о новых пользователях", callbackData: "/switchNotification"),
+                InlineKeyboardButton.WithCallbackData(text: "Включить оповещения", callbackData: "/onNotification"),
+                InlineKeyboardButton.WithCallbackData(text: "Выключить оповещения", callbackData: "/oofNotification"),
             },
             new []
             {
