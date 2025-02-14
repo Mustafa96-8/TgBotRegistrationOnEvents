@@ -1,9 +1,12 @@
-﻿using Telegram.Bot;
+﻿using Microsoft.Extensions.Options;
+using Telegram.Bot;
 using TelegramBot.Services;
+using TelegramBot;
 using TelegramBot.Domain;
 using TelegramBot.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 using TelegramBot.Domain.Repositories.IRepositories;
+using TelegramBot.Domain.Entities;
 using TelegramBot.Services.TelegramServices;
 using TelegramBot.Handlers;
 using System.Globalization;
@@ -18,10 +21,12 @@ CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("ru-RU");
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
-        var connectionString = Environment.GetEnvironmentVariable("CONNECTIONSTRING");
+        var connectionString = Environment.GetEnvironmentVariable("CONNECTIONSTRING")
+             ?? context.Configuration.GetConnectionString("DefaultConnection");
         services.AddDbContext<ApplicationContext>(options =>
             options.UseSqlite(connectionString ?? throw new InvalidOperationException("Database connection string is not configured.")));
-        services.AddScoped<IUnitOfWork,UnitOfWork>();
+        services.Configure<BotConfiguration>(context.Configuration.GetSection("BotConfiguration"));
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<UserProfileService>();
         services.AddScoped<AdminProfileService>();
         services.AddScoped<PersonService>();
@@ -31,7 +36,12 @@ IHost host = Host.CreateDefaultBuilder(args)
                 .AddTypedClient<ITelegramBotClient>((httpClient, sp) =>
                 {
                     string? botToken = Environment.GetEnvironmentVariable("BOTTOKEN");
-                    if (string.IsNullOrWhiteSpace(botToken))
+                    if(string.IsNullOrWhiteSpace(botToken))
+                    {
+                        var botConfiguration = sp.GetRequiredService<IOptions<BotConfiguration>>().Value;
+                        botToken = botConfiguration.BotToken;
+                    }
+                    if(string.IsNullOrWhiteSpace(botToken))
                     {
                         throw new InvalidOperationException("Bot token is not configured.");
                     }
