@@ -11,8 +11,8 @@ using TelegramBot.Domain;
 namespace TelegramBot.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    [Migration("20250214123839_changeAdminProfile2")]
-    partial class changeAdminProfile2
+    [Migration("20250214135852_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

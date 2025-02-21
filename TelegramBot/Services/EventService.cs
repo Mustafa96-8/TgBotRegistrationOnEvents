@@ -21,10 +21,10 @@ public class EventService
         this.unitOfWork = unitOfWork;
     }
 
-    public async Task<Event?> Get(Guid? id, CancellationToken ct)
+    public async Task<Event?> Get(Guid? id, CancellationToken ct,string includeProperty="")
     {
         if (id == null) return null; 
-        var myEvent = await unitOfWork.EventRepository.GetByID(id,ct);
+        var myEvent = await unitOfWork.EventRepository.GetByID(id,ct,includeProperty);
         return myEvent;
     }
 

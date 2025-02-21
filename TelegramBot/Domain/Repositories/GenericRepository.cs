@@ -20,7 +20,8 @@ public class GenericRepository<TEntity> where TEntity : class
         this.dbSet = applicationContext.Set<TEntity>();
     }
 
-    public virtual async Task<IEnumerable<TEntity>> Get(CancellationToken cancellationToken,
+    public virtual async Task<IEnumerable<TEntity>> Get(
+        CancellationToken cancellationToken,
         Expression<Func<TEntity, bool>> filter = null,
         Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
         string includeProperties = "")
@@ -48,9 +49,21 @@ public class GenericRepository<TEntity> where TEntity : class
         }
     }
 
-    public virtual async Task<TEntity?> GetByID(object id,CancellationToken cancellationToken)
+    public virtual async Task<TEntity?> GetByID(
+        object id, 
+        CancellationToken cancellationToken, 
+        string includeProperties = ""
+        )
     {
-        return await dbSet.FindAsync(id,cancellationToken);
+        IQueryable<TEntity> query = dbSet;
+
+        foreach(var includeProperty in includeProperties.Split
+            (new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            query = query.Include(includeProperty);
+        }
+
+        return await query.FirstOrDefaultAsync(entity => EF.Property<object>(entity, "Id").Equals(id), cancellationToken);
     }
 
     public virtual async Task Insert(TEntity entity,CancellationToken cancellationToken)

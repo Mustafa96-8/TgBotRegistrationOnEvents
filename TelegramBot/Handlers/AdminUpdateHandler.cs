@@ -151,8 +151,7 @@ public class AdminUpdateHandler
 
     private async Task<Message> RegisterNotificationNewUsers(Guid eventId)
     {
-        Event? myEvent = await eventService.Get(eventId, cancellationToken);
-        if(myEvent == null)
+        Event? myEvent = await eventService.Get(eventId, cancellationToken, "AdminProfiles"); if(myEvent == null)
         {
             return await sendInfoService.EditOrSendMessage(msg, adminProfile, Messages.SomethingWentWrong, GetAdminKeyboard(), cancellationToken);
         }
@@ -165,19 +164,19 @@ public class AdminUpdateHandler
 
 
     }
-    private async Task<Message> UnregisterNotificationNewUsers(Guid eventId )
+    private async Task<Message> UnregisterNotificationNewUsers(Guid eventId)
     {
-        Event? myEvent = await eventService.Get(eventId, cancellationToken);
-        if(myEvent == null)
+        Event? unregisterEvent = await eventService.Get(eventId, cancellationToken, "AdminProfiles");
+        if(unregisterEvent == null)
+        {
+            return await sendInfoService.SendMessage(adminProfile, Messages.Admin.EventNotFound, GetUserMenuKeyboard(), cancellationToken);
+        }
+        if(!await adminProfileService.Unregister(adminProfile, unregisterEvent, cancellationToken))
         {
             return await sendInfoService.EditOrSendMessage(msg, adminProfile, Messages.SomethingWentWrong, GetAdminKeyboard(), cancellationToken);
         }
-        if(adminProfile.Events.Contains(myEvent))
-        {
-            await adminProfileService.Unregister(adminProfile, myEvent, cancellationToken);
-            return await sendInfoService.EditOrSendMessage(msg, adminProfile, Messages.Admin.YouWillNotReceiveNotifications + myEvent.ToString(), GetAdminKeyboard(), cancellationToken);
-        }
-        return await sendInfoService.EditOrSendMessage(msg, adminProfile, Messages.SomethingWentWrong, GetAdminKeyboard(), cancellationToken);
+
+        return await sendInfoService.EditOrSendMessage(msg, adminProfile, Messages.Admin.YouWillNotReceiveNotifications + " " + unregisterEvent.ToString(), GetAdminKeyboard(), cancellationToken);
 
     }
 
@@ -200,8 +199,17 @@ public class AdminUpdateHandler
         string listAllUsers = GetUserProfileInfo(result);
         if (!string.IsNullOrWhiteSpace(listAllUsers))
         {
-            IEnumerable<UserProfileResponse> users = result.Select(u => new UserProfileResponse { Id = u.Id, Name = u.Name, PhoneNumber = u.PhoneNumber });
-            Message excelFileMessage = await sendInfoService.SendFile(msg.Chat.Id, users, myEvent.Name + " " + DateTime.Now.ToString("g"));
+            IEnumerable<UserProfileResponse> users = result
+                .Select(u => new UserProfileResponse 
+                { 
+                    Id = u.Id, 
+                    Name = u.Name,
+                    PhoneNumber = u.PhoneNumber 
+                });
+            Message excelFileMessage = await sendInfoService.SendFile(
+                msg.Chat.Id, 
+                users, 
+                myEvent.Name + " " + DateTime.Now.ToString("g"));
             logger.LogInformation("The message with excel file send with Id: {SentMessageId}", excelFileMessage?.Id);
             return await sendInfoService.SendMessage( adminProfile, $"<pre>{listAllUsers}</pre>", GetAdminKeyboard(),cancellationToken);
         }

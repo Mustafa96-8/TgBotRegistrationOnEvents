@@ -6,11 +6,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TelegramBot.Migrations
 {
     /// <inheritdoc />
-    public partial class changeAdminProfile2 : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+
             migrationBuilder.CreateTable(
                 name: "AdminProfiles",
                 columns: table => new
@@ -71,26 +72,27 @@ namespace TelegramBot.Migrations
                     table.PrimaryKey("PK_UserProfiles", x => x.Id);
                 });
 
+
             migrationBuilder.CreateTable(
                 name: "AdminProfileEvent",
                 columns: table => new
                 {
-                    AdminProfileId = table.Column<long>(type: "INTEGER", nullable: false),
-                    EventId = table.Column<Guid>(type: "TEXT", nullable: false)
+                    EventId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    AdminProfileId = table.Column<long>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AdminProfileEvent", x => new { x.AdminProfileId, x.EventId });
-                    table.ForeignKey(
-                        name: "FK_AdminProfileEvent_AdminProfiles_AdminProfileId",
-                        column: x => x.AdminProfileId,
-                        principalTable: "AdminProfiles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                    table.PrimaryKey("PK_AdminProfileEvent", x => new {  x.EventId, x.AdminProfileId});
                     table.ForeignKey(
                         name: "FK_AdminProfileEvent_Events_EventId",
                         column: x => x.EventId,
                         principalTable: "Events",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AdminProfileEvent_AdminProfiles_AdminProfileId",
+                        column: x => x.AdminProfileId,
+                        principalTable: "AdminProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -120,9 +122,9 @@ namespace TelegramBot.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_AdminProfileEvent_EventId",
+                name: "IX_AdminProfileEvent_AdminProfileId",
                 table: "AdminProfileEvent",
-                column: "EventId");
+                column: "AdminProfileId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserProfileEvent_UserProfileId",

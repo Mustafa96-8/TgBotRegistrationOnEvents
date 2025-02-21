@@ -17,9 +17,9 @@ public class AdminProfileService
         this.unitOfWork = unitOfWork;
     }
 
-    public async Task<AdminProfile?> Get(long id, CancellationToken ct)
+    public async Task<AdminProfile?> Get(long id, CancellationToken ct, string includeProperty = "")
     {
-        var adminProfile = await unitOfWork.AdminProfileRepository.GetByID(id, ct);
+        var adminProfile = await unitOfWork.AdminProfileRepository.GetByID(id, ct, includeProperty);
         return adminProfile;
     }
 
@@ -32,20 +32,33 @@ public class AdminProfileService
 
     public async Task<bool> Register(AdminProfile adminProfile, Event myEvent, CancellationToken ct)
     {
-        adminProfile.Events.Add(myEvent);
-        unitOfWork.EventRepository.Update(myEvent);
+        // Загружаем коллекцию перед изменением
+        await unitOfWork.AdminProfileRepository.applicationContext.Entry(adminProfile).Collection(a => a.Events).LoadAsync(ct);
 
-        unitOfWork.AdminProfileRepository.Update(adminProfile);
+        if(!adminProfile.Events.Contains(myEvent))
+        {
+            adminProfile.Events.Add(myEvent);
+            unitOfWork.AdminProfileRepository.Update(adminProfile);
+        }
+
         int result = await unitOfWork.Save(ct);
         return result != 0;
     }
 
     public async Task<bool> Unregister(AdminProfile adminProfile, Event myEvent, CancellationToken ct)
     {
-        adminProfile.Events.Remove(myEvent);
-        myEvent.AdminProfiles.Remove(adminProfile);
-        unitOfWork.EventRepository.Update(myEvent);
-        unitOfWork.AdminProfileRepository.Update(adminProfile);
+        // Загружаем коллекцию перед изменением
+        await unitOfWork.AdminProfileRepository.applicationContext.Entry(adminProfile).Collection(a => a.Events).LoadAsync(ct);
+        await unitOfWork.EventRepository.applicationContext.Entry(myEvent).Collection(e => e.AdminProfiles).LoadAsync(ct);
+
+        if(adminProfile.Events.Contains(myEvent))
+        {
+            adminProfile.Events.Remove(myEvent);
+            myEvent.AdminProfiles.Remove(adminProfile);
+            unitOfWork.AdminProfileRepository.Update(adminProfile);
+            unitOfWork.EventRepository.Update(myEvent);
+        }
+
         int result = await unitOfWork.Save(ct);
         return result != 0;
     }

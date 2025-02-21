@@ -64,18 +64,32 @@ namespace TelegramBot.Services
         }
         public async Task<bool> Register(UserProfile userProfile, Event myEvent, CancellationToken ct)
         {
-            userProfile.Events.Add(myEvent);
-            unitOfWork.UserProfileRepository.Update(userProfile);
+            // Загружаем коллекцию перед изменением
+            await unitOfWork.UserProfileRepository.applicationContext.Entry(userProfile).Collection(a => a.Events).LoadAsync(ct);
+
+            if(!userProfile.Events.Contains(myEvent))
+            {
+                userProfile.Events.Add(myEvent);
+                unitOfWork.UserProfileRepository.Update(userProfile);
+            }
+
             int result = await unitOfWork.Save(ct);
             return result != 0;
         }
 
-        public async Task<bool> Unregister(UserProfile userProfile,Event myEvent, CancellationToken ct)
+        public async Task<bool> Unregister(UserProfile userProfile, Event myEvent, CancellationToken ct)
         {
-            userProfile.Events.Remove(myEvent);
-            myEvent.UserProfiles.Remove(userProfile);
-            unitOfWork.EventRepository.Update(myEvent);
-            unitOfWork.UserProfileRepository.Update(userProfile);
+            // Загружаем коллекцию перед изменением
+            await unitOfWork.UserProfileRepository.applicationContext.Entry(userProfile).Collection(a => a.Events).LoadAsync(ct);
+            await unitOfWork.EventRepository.applicationContext.Entry(myEvent).Collection(e => e.UserProfiles).LoadAsync(ct);
+
+            if(userProfile.Events.Contains(myEvent))
+            {
+                userProfile.Events.Remove(myEvent);
+                myEvent.UserProfiles.Remove(userProfile);
+                unitOfWork.UserProfileRepository.Update(userProfile);
+                unitOfWork.EventRepository.Update(myEvent);
+            }
             int result = await unitOfWork.Save(ct);
             return result != 0;
         }
